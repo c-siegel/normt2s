@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import functools
 import json
+import re
 import threading
 import warnings
 from importlib import resources
@@ -22,6 +23,38 @@ from .langs import Language
 def _elements() -> frozenset:
     text = (resources.files("normt2s") / "data" / "elements.json").read_text("utf-8")
     return frozenset(json.loads(text))
+
+
+_REGEX_SPECIAL = frozenset(".^$*+?{}[]|()")
+
+
+def _leading_literal(pattern: str) -> str:
+    r"""The literal text a regex pattern must start with, up to the first blank or sentence mark.
+
+    ``::[a-z_]+::`` -> ``::``; ``\[\d+\]`` -> ``[``; ``<emotion:\w+>`` -> ``<emotion:``.
+    """
+    out = []
+    i, n = 0, len(pattern)
+    while i < n:
+        ch = pattern[i]
+        if ch == "\\":
+            if i + 1 >= n or pattern[i + 1].isalnum():
+                break  # \d, \w, \s, \b ...
+            lit, i = pattern[i + 1], i + 2
+        elif ch in _REGEX_SPECIAL:
+            break
+        else:
+            lit, i = ch, i + 1
+        if i < n and pattern[i] in "*?{":  # optional: not part of the guaranteed start
+            break
+        out.append(lit)
+        if i < n and pattern[i] == "+":
+            break
+    text = "".join(out)
+    for j, ch in enumerate(text):
+        if ch.isspace() or ch in ".!?…":
+            return text[:j]
+    return text
 
 
 def _locked(fn):
@@ -66,6 +99,8 @@ class Lexicon:
         self.punctuation: Dict[str, str] = {}
         # tokens spelled out letter by letter, digits as numbers: "CO2" -> "C O two"
         self.spelled: Dict[str, None] = {}
+        # application tokens that must stay as they are: pattern -> (spoken or None, opener)
+        self.protected: Dict[str, tuple] = {}
         # LaTeX commands such as "\\times" -> "times" (also bare characters such as "/")
         self.latex_commands: Dict[str, str] = {}
         # LaTeX function names without backslash: "sin" -> "sine"
@@ -141,6 +176,10 @@ class Lexicon:
             self.add_symbol(key, val)
         for key, val in data.get("operators", {}).items():
             self.add_operator(key, val)
+        for item in data.get("protected", ()):
+            if isinstance(item, str):
+                item = {"pattern": item}
+            self.add_protected(item["pattern"], item.get("spoken"), item.get("opener"))
         for token in data.get("spelled", ()):
             self.add_spelled(token)
         for key, val in data.get("punctuation", {}).items():
@@ -194,6 +233,34 @@ class Lexicon:
         if not key or any(ch.isspace() for ch in key):
             raise ValueError(f"symbol key must be non-empty and contain no whitespace: {key!r}")
         self.symbols[key] = word
+        self.version += 1
+
+    @_locked
+    def add_protected(self, pattern: str, spoken: Optional[str] = None,
+                      opener: Optional[str] = None) -> None:
+        r"""``add_protected(r"::[a-z_]+::")``: matches are never normalized.
+
+        ``spoken`` is what the match becomes in the spoken text: ``None`` keeps it verbatim,
+        ``""`` removes it. ``opener`` is the literal text a match starts with; a stream holds
+        back a cut while an opener is on the current line without a complete match. It is
+        taken from the start of the pattern when that is literal (``::`` for ``::[a-z_]+::``),
+        otherwise pass it, or ``""`` if matches can never contain a sentence end.
+        """
+        try:
+            compiled = re.compile(pattern)
+            re.compile("(?:" + pattern + ")")
+        except re.error as exc:
+            raise ValueError(f"invalid protected pattern {pattern!r}: {exc}") from None
+        if compiled.groups:
+            raise ValueError("protected patterns must not contain capturing groups; use (?:...)")
+        if compiled.search("") is not None:
+            raise ValueError("protected patterns must not match the empty string")
+        if opener is None:
+            opener = _leading_literal(pattern)
+            if not opener:
+                raise ValueError(
+                    f"cannot find a literal start in {pattern!r}; pass opener=... (or '' for none)")
+        self.protected[pattern] = (spoken, opener)
         self.version += 1
 
     @_locked

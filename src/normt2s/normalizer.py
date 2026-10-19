@@ -62,6 +62,9 @@ class _Compiled(NamedTuple):
     punct: Any
     spelled_re: Any
     iso_re: Any
+    span_re: Any
+    protected: Any
+    openers: Any
 
 
 # Rule output is parked behind placeholders (no digits, no word characters) during the pipeline.
@@ -89,7 +92,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 17))
+_EMPTY = _Compiled(-1, *([None] * 20))
 
 
 class Normalizer:
@@ -146,6 +149,11 @@ class Normalizer:
         self.lexicon.add_spelled(token)
         return self
 
+    def add_protected(self, pattern: str, spoken: Optional[str] = None,
+                      opener: Optional[str] = None) -> "Normalizer":
+        self.lexicon.add_protected(pattern, spoken, opener)
+        return self
+
     def add_punctuation(self, char: str, replacement: str) -> "Normalizer":
         self.lexicon.add_punctuation(char, replacement)
         return self
@@ -161,21 +169,35 @@ class Normalizer:
         rule that matched is appended once to ``applied`` (a list) in order of first match."""
         if not text:
             return text
-        if not self._markdown:
-            return self._run(text, rules, applied)
-        text, verbatim = _md.strip(text, SPAN_RE, _mid_line)
-        return _md.restore(self._run(text, rules, applied), verbatim)
-
-    def _run(self, text: str, rules: Optional[RuleSet] = None, applied: Optional[list] = None) -> str:
         c = self.ensure_compiled()
+        if not self._markdown:
+            return self._run(text, c, rules, applied)
+        text, verbatim = _md.strip(text, c.span_re, _mid_line)
+        return _md.restore(self._run(text, c, rules, applied), verbatim)
+
+    def _run(self, text: str, c: _Compiled, rules: Optional[RuleSet] = None,
+             applied: Optional[list] = None) -> str:
         out = []
         pos = 0
-        for m in SPAN_RE.finditer(text):
-            if m.start() > pos:
-                out.append(self._gap(text[pos:m.start()], c, rules, applied))
+        closing = ".,;:!?)"
+        for m in c.span_re.finditer(text):
+            start = m.start()
+            if start > pos:
+                out.append(self._gap(text[pos:start], c, rules, applied))
             spoken = None
-            if self._latex is not None and m.lastgroup in ("m1", "m2", "m3", "m4"):
-                spoken = self._latex.speak(m.group(m.lastgroup))
+            kind = m.lastgroup
+            if kind is not None and kind[0] == "p":  # an application's protected pattern
+                spoken = c.protected[int(kind[1:])]
+                if spoken == "":  # removed: close the gap it leaves
+                    if text[m.end():m.end() + 1] in closing and out and out[-1][-1:] == " ":
+                        out[-1] = out[-1].rstrip(" ")
+                    nxt = m.end()
+                    if text[nxt:nxt + 1] == " " and (not out or out[-1][-1:].isspace()):
+                        nxt += 1
+                    pos = nxt
+                    continue
+            elif self._latex is not None and kind in ("m1", "m2", "m3", "m4"):
+                spoken = self._latex.speak(m.group(kind))
             out.append(m.group() if spoken is None else spoken)
             pos = m.end()
         if pos == 0:
@@ -357,10 +379,16 @@ class Normalizer:
             + r")(?!\w)") if lex.spelled else None
         elements = "|".join(sorted(Lexicon.elements(), key=len, reverse=True))
         iso_re = re.compile(rf"(?<![\w-])(?P<el>{elements})-(?P<n>\d{{1,3}})(?![\w-])")
+        if lex.protected:
+            custom = "|".join(f"(?P<p{i}>(?:{pat}))" for i, pat in enumerate(lex.protected))
+            span_re = re.compile(custom + "|" + _PROTECT + "|" + _MATH)
+        else:
+            span_re = SPAN_RE
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
         return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
                          suffix_re, scale_re, year_re, range_re, date_re, punct_re, dict(lex.punctuation),
-                         spelled_re, iso_re)
+                         spelled_re, iso_re, span_re, tuple(spoken for spoken, _ in lex.protected.values()),
+                         tuple(op for _, op in lex.protected.values() if op))
 
     # ---------------------------------------------------------------- pipeline
     def _plain(self, text: str, c: Optional[_Compiled] = None, rules: Optional[RuleSet] = None,

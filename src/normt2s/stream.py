@@ -16,7 +16,7 @@ from bisect import bisect_left
 from typing import List, NamedTuple, Optional
 
 from . import markdown as _md
-from .normalizer import SPAN_RE
+from .normalizer import SPAN_RE  # noqa: F401  (kept for backward compatibility)
 
 _FENCE_RE = re.compile(r"(?s)```.*?```")
 _SENTENCE_RE = re.compile(r"(?<![.!?…])[.!?…]+[\"')\]”’»]*[ \t]+")
@@ -108,12 +108,18 @@ class StreamNormalizer:
     def _find_cut(self) -> int:
         buf = self._buf
         n = self._n
-        n.ensure_compiled()
+        c = n.ensure_compiled()
 
         limit = self._open_span_start(buf)
         if n._markdown:
             limit = _open_markdown_start(buf, limit)
         head = buf[:limit]
+        span_re = c.span_re
+        spans = [m.span() for m in span_re.finditer(head)]
+        if c.openers:  # an application's marker that has started but not ended yet
+            limit = _open_marker_start(head, c.openers, spans)
+            head = head[:limit]
+            spans = [s for s in spans if s[1] <= limit]
 
         # candidate cut points: after a newline, or after sentence punctuation + whitespace
         cuts = [i + 1 for i, c in enumerate(head) if c == "\n"]
@@ -123,9 +129,8 @@ class StreamNormalizer:
                 cuts.append(m.end())
         # a cut must not fall inside a code / URL / math span (or, for Markdown, a complete
         # emphasis or link)
-        spans = [m.span() for m in SPAN_RE.finditer(head)]
         if n._markdown:
-            spans += _md.inline_spans(head, SPAN_RE)
+            spans += _md.inline_spans(head, span_re)
         if self._rules is not None:  # a rule such as "e. g." may contain a sentence mark
             spans += [m.span() for m, _ in self._rules.scan(head)]
         inside = _interior(spans)
@@ -183,6 +188,22 @@ class StreamNormalizer:
         if tail.count("$") % 2 and "$$" not in tail:
             limit = min(limit, line_start + tail.rfind("$"))
         return limit
+
+
+def _open_marker_start(head: str, openers, spans) -> int:
+    """Start of the first opener on the current line that begins no complete protected match."""
+    line_start = head.rfind("\n") + 1
+    inside = _interior([(a, b) for a, b in spans if b > line_start])
+    starts = {a for a, _ in spans}
+    limit = len(head)
+    for opener in openers:
+        i = head.find(opener, line_start)
+        while i != -1 and i < limit:
+            if i not in starts and not inside(i):
+                limit = i
+                break
+            i = head.find(opener, i + 1)
+    return limit
 
 
 def _open_markdown_start(buf: str, limit: int) -> int:

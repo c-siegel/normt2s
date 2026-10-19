@@ -27,15 +27,16 @@ normalize("Der Zug fährt 120 km/h, z. B. um 14:30.", lang="de")
 2. [What gets converted](#what-gets-converted)
 3. [Adding your own words](#adding-your-own-words)
 4. [Markdown](#markdown)
-5. [Rule sets for pronunciations](#rule-sets-for-pronunciations)
-6. [Math (LaTeX)](#math-latex)
-7. [Streaming LLM output](#streaming-llm-output)
-8. [Reference: options and API](#reference-options-and-api)
-9. [How it works](#how-it-works)
-10. [Adding a language](#adding-a-language)
-11. [Performance](#performance)
-12. [Known limitations](#known-limitations)
-13. [Development](#development)
+5. [Your own control tokens](#your-own-control-tokens)
+6. [Rule sets for pronunciations](#rule-sets-for-pronunciations)
+7. [Math (LaTeX)](#math-latex)
+8. [Streaming LLM output](#streaming-llm-output)
+9. [Reference: options and API](#reference-options-and-api)
+10. [How it works](#how-it-works)
+11. [Adding a language](#adding-a-language)
+12. [Performance](#performance)
+13. [Known limitations](#known-limitations)
+14. [Development](#development)
 
 ## Install
 
@@ -172,6 +173,7 @@ have already used.
 | A LaTeX command | `lexicon.add_latex_command(name, spoken)` | `("R", "the reals")` |
 | A LaTeX function | `lexicon.add_latex_function(name, spoken)` | `("sinc", "sinc")` |
 | A LaTeX sentence template | `lexicon.add_phrase(key, template)` | `("frac", "{a} divided by {b}")` |
+| Text that must stay as it is, or be dropped from speech | `add_protected(pattern, spoken=None, opener=None)` | `(r"::[a-z_]+::")` |
 | A token spelled out letter by letter | `add_spelled(token)` | `("ATP5")` |
 | A character read as a pause | `add_punctuation(char, replacement)` | `("—", ", ")` |
 | Remove an entry | `lexicon.remove(kind, key)` | `("abbreviations", "vs.")` |
@@ -241,6 +243,33 @@ it is closed or the line ends, and a cut never falls inside a complete emphasis 
 
 Not handled: tables, footnotes and reference-style links (`[text][ref]`). A line starting with a
 number and a dot (`3. Mai war schön`) is a list item in Markdown and loses the number.
+
+## Your own control tokens
+
+Applications put their own markers into LLM output: stage directions (`[laughs]`), gesture or
+emotion tags (`::wave::`, `<emotion:happy>`), citation numbers (`[1]`). They must not be
+normalized, must not be cut in half by the stream, and are often meant to be removed from speech
+but kept for display:
+
+```python
+n.add_protected(r"::[a-z_]+::")              # kept verbatim in the spoken text
+n.add_protected(r"\[\d+\]", spoken="")       # removed from the spoken text, kept in Piece.raw
+
+n.normalize("Hi ::wave:: it is 5 km [1] away.")
+# 'Hi ::wave:: it is five kilometers away.'
+```
+
+- `spoken=None` (default) keeps a match as it is, `spoken=""` removes it (and the doubled space
+  it would leave), any other string replaces it.
+- A protected match separates a number from its unit like any other protected span:
+  `5 ::wave:: kg` is "five ::wave:: kg".
+- The pattern is a regular expression written by *you*, the developer; it must compile, must not
+  match the empty string and must not have capturing groups (write `(?:...)`). Invalid patterns
+  raise `ValueError`.
+- A stream never cuts inside a match. For a match that has started but is not complete yet
+  (`::wav`), it uses the pattern's literal start (`::`), taken from the pattern when possible. Pass
+  `opener="..."` otherwise, or `opener=""` when matches can never contain a sentence end.
+- In a lexicon file: `"protected": [{"pattern": "\\[\\d+\\]", "spoken": ""}, "::[a-z_]+::"]`.
 
 ## Rule sets for pronunciations
 

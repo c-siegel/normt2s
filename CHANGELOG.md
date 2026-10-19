@@ -4,6 +4,8 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
 
 ## Unreleased (0.3.0)
 
+- **New (F10):** `add_protected(pattern, spoken=None, opener=None)` and a `protected` list in lexicon files.
+  Matches are kept, replaced or removed, and streams never cut inside them.
 - **New (F9):** `Piece(raw, spoken)`, `stream.feed_pieces()` and `stream.flush_piece()`; `feed()` returns the
   joined `spoken` parts of everything released by one call; `normalize_stream` yields per piece.
 - **New (F8):** `stream(first_min_chars=, min_chars=)` and the same on `normalize_stream`; the defaults keep

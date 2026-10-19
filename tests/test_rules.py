@@ -235,6 +235,6 @@ def test_200_rules_at_most_double():
             en.normalize(sentence, **kw)
         return time.perf_counter() - t
 
-    base = min(bench() for _ in range(3))
-    with_rules = min(bench(rules=rules) for _ in range(3))
-    assert with_rules < base * 2.0
+    base = min(bench() for _ in range(5))
+    with_rules = min(bench(rules=rules) for _ in range(5))
+    assert with_rules < base * 2.0, (with_rules, base)
