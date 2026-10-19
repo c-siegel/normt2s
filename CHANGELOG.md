@@ -2,7 +2,7 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
-## Unreleased (0.4.0)
+## 0.4.0
 
 - **Output change (F12, German):** `der 3. Platz` -> "der dritte Platz", `im 21. Jahrhundert` ->
   "im einundzwanzigsten Jahrhundert" (was "der drei. Platz"). New `Language.ordinal_dot_regex` hook.

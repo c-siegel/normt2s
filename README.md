@@ -6,7 +6,7 @@ slash h".
 
 - **English and German**
 - **No dependencies**, pure Python 3.9+, MIT licensed
-- **Fast**: about 100 µs for a typical sentence
+- **Fast**: about 95 µs for a typical sentence
 - **Streaming-ready**: works on LLM output as it arrives, token by token
 - **Easy to extend**: add words with one line of code or a small JSON file, or let users bring their own pronunciation rules
 - **LLM-ready**: optional Markdown stripping, bare LaTeX and chemical formulas
@@ -539,12 +539,12 @@ list lives in `data/`.
 
 | Input | Time |
 |---|---|
-| a typical sentence (74 characters) | about 100 µs |
-| a 600-character paragraph | about 0.85 ms |
+| a typical sentence (74 characters) | about 95 µs |
+| a 600-character paragraph | about 0.75 ms |
 | a 700-character Markdown paragraph (`markdown="strip"`) | about 0.7 ms |
-| the sentence with a 200-rule `RuleSet` | about 130 µs |
-| streaming 1,000 one-character chunks | about 13 ms |
-| one-time startup (building and compiling) | about 25 ms |
+| the sentence with a 200-rule `RuleSet` | about 150 µs |
+| streaming 1,000 one-character chunks | about 14 ms |
+| one-time startup (building and compiling) | about 20 ms |
 
 ## Known limitations
 
@@ -578,7 +578,7 @@ python benchmarks/bench.py
 ```
 
 Before 1.0, a minor release may change spoken output and a patch release never does, so pin
-`normt2s>=0.3,<0.4`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
+`normt2s>=0.4,<0.5`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
 files in `tests/golden/` list typical inputs and their output per language.
 The hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`, `$`, `\`,
 `` ` ``, `[` and `::`.
