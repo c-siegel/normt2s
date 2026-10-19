@@ -432,6 +432,10 @@
   "³": "hoch drei",
   "#": "Nummer"
  },
+ "operators": {
+  "*": "mal",
+  "/": "geteilt durch"
+ },
  "latex": {
   "commands": {
    "\\times": "mal",

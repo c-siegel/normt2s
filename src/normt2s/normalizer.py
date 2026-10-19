@@ -46,6 +46,7 @@ class _Compiled(NamedTuple):
     abbr_re: Any
     no_boundary_tokens: Any
     sym: Any
+    ops: Any
     pre_re: Any
     post_re: Any
     token_re: Any
@@ -61,7 +62,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 12))
+_EMPTY = _Compiled(-1, *([None] * 13))
 
 
 class Normalizer:
@@ -184,16 +185,26 @@ class Normalizer:
 
         # symbols that need digit context are handled before the number pass
         sym = lex.symbols
-        pre_re = re.compile(
-            r"(?<=\d) [-−] (?=\d)"        # 5 - 3
-            r"|\^(?P<exp>-?\w+)"           # x^2
-            r"|#(?=\d)"                    # #5
-            r"|(?<![\w+])\+(?=\d)"         # +49
-        )
+        ops = lex.operators
+        pre_alts = [
+            r"(?<=\d) [-−] (?=\d)",         # 5 - 3
+            r"\^(?P<exp>-?\w+)",             # x^2
+            r"#(?=\d)",                      # #5
+            r"(?<![\w+])\+(?=\d)",           # +49
+        ]
+        if "*" in ops:                       # 3 * 4, 3*4, 2*(x+1); never *word* or **
+            pre_alts.append(r"(?<=[\d)\]])\s*(?P<mul>\*)\s*(?=[\d(\[])")
+        if "/" in ops:                       # 3 / 4 with spaces; 1/2 stays a fraction
+            pre_alts.append(r"(?<=[\d)\]]) (?P<div>/) (?=[\d(\[])")
+        pre_re = re.compile("|".join(pre_alts))
+        # every other single-character symbol is infix; longer keys (``!=``) go by length
+        handled = "-^#%=+<>&²³"
+        chars = [k for k in sym if len(k) == 1 and not k.isalnum() and k not in handled]
+        multi = sorted((k for k in sym if len(k) > 1 and k[0] != "^"), key=len, reverse=True)
         post_re = re.compile(
             r"(?P<sq>(?<=[\w)\]])[²³])"
-            + (r"|\s?(?P<op>[" + "".join(esc(c) for c in "×÷≠≤≥≈±−" if c in sym) + r"])\s?"
-               if any(c in sym for c in "×÷≠≤≥≈±−") else "")
+            + (r"|\s?(?P<mop>" + "|".join(esc(k) for k in multi) + r")\s?" if multi else "")
+            + (r"|\s?(?P<op>[" + "".join(esc(k) for k in chars) + r"])\s?" if chars else "")
             + r"|(?<=[\w)\]])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£-])"
             r"|(?<=\S) (?P<cmp>[<>]) (?=\S)"
             r"|(?<=\s)(?P<amp>&)(?=\s)"
@@ -242,7 +253,7 @@ class Normalizer:
         ) if lang.year_prepositions else None
         range_re = re.compile(r"(?<=\d)\s?–\s?(?=\d)")
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
-        return _Compiled(version, abbr, abbr_re, no_boundary, sym, pre_re, post_re, token_re,
+        return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
                          suffix_re, scale_re, year_re, range_re, date_re)
 
     # ---------------------------------------------------------------- pipeline
@@ -282,6 +293,8 @@ class Normalizer:
             if exp == "3" and "^3" in s:
                 return " " + s["^3"]
             return f" {s['^']} {exp}" if "^" in s else g
+        if g.strip() in ("*", "/"):
+            return f" {c.ops[g.strip()]} "
         if g == "#":
             return s["#"] + " " if "#" in s else g
         if g == "+":
@@ -292,7 +305,7 @@ class Normalizer:
         s = c.sym
         if m.group("sq"):
             return " " + s[m.group("sq")]
-        for name in ("op", "eq", "cmp", "amp"):
+        for name in ("mop", "op", "eq", "cmp", "amp"):
             if name in m.re.groupindex and m.group(name):
                 word = s.get(m.group(name))
                 if not word:

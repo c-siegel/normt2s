@@ -346,6 +346,10 @@
   "³": "cubed",
   "#": "number"
  },
+ "operators": {
+  "*": "times",
+  "/": "divided by"
+ },
  "latex": {
   "commands": {
    "\\times": "times",

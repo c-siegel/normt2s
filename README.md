@@ -68,6 +68,7 @@ Every row is real output from the library.
 | Currency | `$3.50`, `€5`, `5 EUR`, `$2.5 million` | three dollars and fifty cents, five euros, five euros, two point five million dollars |
 | Abbreviations | `Dr. Smith, e.g. ...`, `etc.` | Doctor Smith, for example ..., et cetera |
 | Math symbols | `2 + 3 = 5`, `x²`, `a ≤ b` | two plus three equals five, x squared, a is less than or equal to b |
+| Operators | `3 * 4 * 5`, `2*(x+1)`, `3 / 4` | three times four times five, two times (x plus one), three divided by four |
 
 ### German
 
@@ -85,6 +86,16 @@ Every row is real output from the library.
 
 German dates take the right case ending from the word before them: `am` / `vom` / `zum` / `dem`
 / `den` give *fünfzehnten*, `der` gives *fünfzehnte*, and a date on its own gives *fünfzehnter*.
+
+### Symbols and operators
+
+`add_symbol` accepts any single character or character sequence without whitespace (an empty or
+whitespace key raises `ValueError`): `n.add_symbol("@", "at")` reads `5 @ 3` as "five at three".
+
+`*` and `/` are ambiguous in prose, so they have their own built-in `operators` table and are only
+read between operands: `3 * 4 * 5`, `3*4*5` and `2*(x+1)` use "times"; `3 / 4` (spaces required)
+uses "divided by". `1/2` stays a fraction, and `a * b`, `*word*`, `**bold**` and `and/or` are not
+touched. In a lexicon file, use an `"operators": {"*": "times", "/": "divided by"}` table.
 
 ### What is left alone
 
@@ -133,7 +144,8 @@ have already used.
 | An abbreviation | `add_abbreviation(key, to)` | `("tbh", "to be honest")` |
 | A unit after a number | `add_unit(symbol, singular, plural, gender)` | `("kn", "knot")` |
 | A currency | `add_currency(symbol, major, minor)` | see above |
-| A math symbol such as `=` or `×` | `add_symbol(key, word)` | `("=", "is")` |
+| A math symbol such as `=` or `×`, or any other character or sequence | `add_symbol(key, word)` | `("=", "is")`, `("@", "at")`, `("!=", "is not")` |
+| `*` or ` / ` between operands | `lexicon.add_operator(key, word)` | `("*", "times")` |
 | A LaTeX command | `lexicon.add_latex_command(name, spoken)` | `("R", "the reals")` |
 | A LaTeX function | `lexicon.add_latex_function(name, spoken)` | `("sinc", "sinc")` |
 | A LaTeX sentence template | `lexicon.add_phrase(key, template)` | `("frac", "{a} divided by {b}")` |
@@ -336,6 +348,8 @@ list lives in `data/`.
 
 - **Acronyms** such as "AI" or "LLM" are not expanded by default. Add the ones you need with
   `add_abbreviation`.
+- **Multiplication and division:** `*` and ` / ` are only read between a digit, `)` or `]` and
+  a digit, `(` or `[` (`a * b` is left alone).
 - **Subtraction:** `-` is only read as "minus" between two numbers with spaces around it
   (`5 - 3`). In `x - 1` it is left as it is. In LaTeX math it is always read.
 - **German ordinal dots** are only recognised in dates (`am 3. Mai`), not in general

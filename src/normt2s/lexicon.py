@@ -54,6 +54,8 @@ class Lexicon:
         self.units: Dict[str, Form] = {}
         self.currencies: Dict[str, Currency] = {}
         self.symbols: Dict[str, str] = {}
+        # operators read only between operands: "*" and " / "
+        self.operators: Dict[str, str] = {}
         # LaTeX commands such as "\\times" -> "times" (also bare characters such as "/")
         self.latex_commands: Dict[str, str] = {}
         # LaTeX function names without backslash: "sin" -> "sine"
@@ -106,6 +108,8 @@ class Lexicon:
             self.add_currency(sym, val["major"], val.get("minor"))
         for key, val in data.get("symbols", {}).items():
             self.add_symbol(key, val)
+        for key, val in data.get("operators", {}).items():
+            self.add_operator(key, val)
         latex = data.get("latex", {})
         for key, val in latex.get("commands", {}).items():
             self.add_latex_command(key, val)
@@ -152,7 +156,17 @@ class Lexicon:
 
     @_locked
     def add_symbol(self, key: str, word: str) -> None:
+        if not key or any(ch.isspace() for ch in key):
+            raise ValueError(f"symbol key must be non-empty and contain no whitespace: {key!r}")
         self.symbols[key] = word
+        self.version += 1
+
+    @_locked
+    def add_operator(self, key: str, word: str) -> None:
+        """``add_operator("*", "times")``: read only between operands (``3 * 4``). Keys: ``*``, ``/``."""
+        if key not in ("*", "/"):
+            raise ValueError("operator key must be '*' or '/'")
+        self.operators[key] = word
         self.version += 1
 
     @_locked
