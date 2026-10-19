@@ -55,6 +55,8 @@ class _Compiled(NamedTuple):
     year_re: Any
     range_re: Any
     date_re: Any
+    punct_re: Any
+    punct: Any
 
 
 _DIGIT_RE = re.compile(r"\d")
@@ -62,7 +64,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 13))
+_EMPTY = _Compiled(-1, *([None] * 15))
 
 
 class Normalizer:
@@ -99,6 +101,10 @@ class Normalizer:
 
     def add_symbol(self, key: str, word: str) -> "Normalizer":
         self.lexicon.add_symbol(key, word)
+        return self
+
+    def add_punctuation(self, char: str, replacement: str) -> "Normalizer":
+        self.lexicon.add_punctuation(char, replacement)
         return self
 
     def load_lexicon(self, path: Union[str, Path]) -> "Normalizer":
@@ -251,10 +257,13 @@ class Normalizer:
         year_re = re.compile(
             r"(?:^|[\s(])(?:" + "|".join(esc(p) for p in lang.year_prepositions) + r")\s+$", re.I
         ) if lang.year_prepositions else None
-        range_re = re.compile(r"(?<=\d)\s?–\s?(?=\d)")
+        range_re = re.compile(r"(?<=\d)\s?[–—]\s?(?=\d)")
+        punct_re = re.compile(
+            r"[ 	]*(?P<p>[" + "".join(esc(k) for k in lex.punctuation) + r"])[ 	]*"
+        ) if lex.punctuation else None
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
         return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
-                         suffix_re, scale_re, year_re, range_re, date_re)
+                         suffix_re, scale_re, year_re, range_re, date_re, punct_re, dict(lex.punctuation))
 
     # ---------------------------------------------------------------- pipeline
     def _plain(self, text: str, c: Optional[_Compiled] = None) -> str:
@@ -268,7 +277,23 @@ class Normalizer:
         if has_digit:
             text = c.range_re.sub(f" {self.lang.range_word} ", text)
             text = self._numbers(text, c)
+        if c.punct_re:
+            text = c.punct_re.sub(lambda m: self._punct_sub(m, c), text)
         return c.post_re.sub(lambda m: self._post_sub(m, c), text)
+
+    @staticmethod
+    def _punct_sub(m: "re.Match[str]", c: _Compiled) -> str:
+        rep = c.punct[m.group("p")]
+        text, start, end = m.string, m.start(), m.end()
+        if start == 0 or text[start - 1] == "\n" or end == len(text) or text[end] == "\n":
+            return ""  # a dash opening or closing a line has nothing to pause between
+        mark = rep.strip()
+        if len(mark) == 1 and mark in ",;:":
+            if text[end] in ".,;:!?":
+                return ""
+            if text[start - 1] == mark:
+                return " "
+        return rep
 
     def _abbr_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
         entry = c.abbr[re.sub(r"\s+", "", m.group())]

@@ -68,6 +68,7 @@ Every row is real output from the library.
 | Currency | `$3.50`, `€5`, `5 EUR`, `$2.5 million` | three dollars and fifty cents, five euros, five euros, two point five million dollars |
 | Abbreviations | `Dr. Smith, e.g. ...`, `etc.` | Doctor Smith, for example ..., et cetera |
 | Math symbols | `2 + 3 = 5`, `x²`, `a ≤ b` | two plus three equals five, x squared, a is less than or equal to b |
+| Pauses | `The result — a success — was clear.` | The result, a success, was clear. |
 | Operators | `3 * 4 * 5`, `2*(x+1)`, `3 / 4` | three times four times five, two times (x plus one), three divided by four |
 
 ### German
@@ -96,6 +97,13 @@ whitespace key raises `ValueError`): `n.add_symbol("@", "at")` reads `5 @ 3` as 
 read between operands: `3 * 4 * 5`, `3*4*5` and `2*(x+1)` use "times"; `3 / 4` (spaces required)
 uses "divided by". `1/2` stays a fraction, and `a * b`, `*word*`, `**bold**` and `and/or` are not
 touched. In a lexicon file, use an `"operators": {"*": "times", "/": "divided by"}` table.
+
+### Pauses
+
+Many TTS engines read an em dash (`—`) as "minus". By default it becomes a comma pause, and between
+two digits it is a range like the en dash: `10—20` is "ten to twenty". A dash at the start or end of
+a line is dropped, and no doubled commas are produced. Change or extend it with
+`n.add_punctuation("…", " dot dot dot ")` or a `"punctuation"` table in a lexicon file.
 
 ### What is left alone
 
@@ -149,6 +157,7 @@ have already used.
 | A LaTeX command | `lexicon.add_latex_command(name, spoken)` | `("R", "the reals")` |
 | A LaTeX function | `lexicon.add_latex_function(name, spoken)` | `("sinc", "sinc")` |
 | A LaTeX sentence template | `lexicon.add_phrase(key, template)` | `("frac", "{a} divided by {b}")` |
+| A character read as a pause | `add_punctuation(char, replacement)` | `("—", ", ")` |
 | Remove an entry | `lexicon.remove(kind, key)` | `("abbreviations", "vs.")` |
 
 Notes on abbreviations:

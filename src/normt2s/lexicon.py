@@ -56,6 +56,8 @@ class Lexicon:
         self.symbols: Dict[str, str] = {}
         # operators read only between operands: "*" and " / "
         self.operators: Dict[str, str] = {}
+        # characters spoken as a pause: "—" -> ", "
+        self.punctuation: Dict[str, str] = {}
         # LaTeX commands such as "\\times" -> "times" (also bare characters such as "/")
         self.latex_commands: Dict[str, str] = {}
         # LaTeX function names without backslash: "sin" -> "sine"
@@ -110,6 +112,8 @@ class Lexicon:
             self.add_symbol(key, val)
         for key, val in data.get("operators", {}).items():
             self.add_operator(key, val)
+        for key, val in data.get("punctuation", {}).items():
+            self.add_punctuation(key, val)
         latex = data.get("latex", {})
         for key, val in latex.get("commands", {}).items():
             self.add_latex_command(key, val)
@@ -159,6 +163,14 @@ class Lexicon:
         if not key or any(ch.isspace() for ch in key):
             raise ValueError(f"symbol key must be non-empty and contain no whitespace: {key!r}")
         self.symbols[key] = word
+        self.version += 1
+
+    @_locked
+    def add_punctuation(self, char: str, replacement: str) -> None:
+        """``add_punctuation("—", ", ")``: replace ``char`` (with surrounding blanks) by ``replacement``."""
+        if len(char) != 1 or char.isspace():
+            raise ValueError("punctuation key must be a single non-blank character")
+        self.punctuation[char] = replacement
         self.version += 1
 
     @_locked

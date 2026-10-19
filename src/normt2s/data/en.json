@@ -346,6 +346,9 @@
   "³": "cubed",
   "#": "number"
  },
+ "punctuation": {
+  "—": ", "
+ },
  "operators": {
   "*": "times",
   "/": "divided by"

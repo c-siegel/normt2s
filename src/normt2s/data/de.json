@@ -432,6 +432,9 @@
   "³": "hoch drei",
   "#": "Nummer"
  },
+ "punctuation": {
+  "—": ", "
+ },
  "operators": {
   "*": "mal",
   "/": "geteilt durch"
