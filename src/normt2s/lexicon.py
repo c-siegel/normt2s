@@ -75,6 +75,7 @@ class Lexicon:
         self._explicit: Set[str] = set()
         # bumped on every change so a Normalizer knows when to recompile its regexes
         self.version = 0
+        self._nouns = (-1, {})
         # guards edits and snapshots, so a Normalizer never compiles a half-edited lexicon
         self.lock = threading.RLock()
 
@@ -86,6 +87,21 @@ class Lexicon:
                 if isinstance(val, (dict, list, set)):
                     setattr(snap, name, copy.copy(val))
             return snap
+
+    @property
+    def unit_nouns(self) -> Dict[str, Form]:
+        """Reverse index: every unit's singular and plural word -> its :class:`Form`."""
+        cached = self._nouns
+        if cached[0] != self.version:
+            with self.lock:
+                version = self.version
+                nouns: Dict[str, Form] = {}
+                for form in self.units.values():
+                    nouns.setdefault(form.plural, form)
+                for form in self.units.values():
+                    nouns[form.singular] = form
+                cached = self._nouns = (version, nouns)
+        return cached[1]
 
     # ---------------------------------------------------------------- loading
     @staticmethod

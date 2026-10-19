@@ -27,14 +27,15 @@ _INITIAL_RE = re.compile(r"[A-Z]\.|\d{1,2}\.")  # initials and ordinal dots ("3.
 
 
 class StreamNormalizer:
-    def __init__(self, normalizer, max_buffer: int = 400):
+    def __init__(self, normalizer, max_buffer: int = 400, rules=None):
         self._n = normalizer
         self._max = max_buffer
+        self._rules = rules
         self._buf = ""
         self._mid_line = False  # does the next text continue a line already released?
 
     def _release(self, head: str) -> str:
-        out = self._n.normalize(head, _mid_line=self._mid_line)
+        out = self._n.normalize(head, self._rules, _mid_line=self._mid_line)
         if head:
             self._mid_line = not head.endswith("\n")
         return out
@@ -75,9 +76,12 @@ class StreamNormalizer:
         spans = [m.span() for m in SPAN_RE.finditer(head)]
         if n._markdown:
             spans += _md.inline_spans(head, SPAN_RE)
+        if self._rules is not None:  # a rule such as "e. g." may contain a sentence mark
+            spans += [m.span() for m, _ in self._rules.scan(head)]
         if cuts:
             for cut in sorted(cuts, reverse=True):
-                if not any(a < cut < b for a, b in spans):
+                if not any(a < cut < b for a, b in spans) and not (
+                        self._rules is not None and self._rules.dangling(head[:cut])):
                     return cut
 
         if len(head) > self._max:

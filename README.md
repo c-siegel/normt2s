@@ -239,6 +239,63 @@ it is closed or the line ends, and a cut never falls inside a complete emphasis 
 Not handled: tables, footnotes and reference-style links (`[text][ref]`). A line starting with a
 number and a dot (`3. Mai war schön`) is a list item in Markdown and loses the number.
 
+## Rule sets for pronunciations
+
+Applications often let users fix pronunciations: `pH` should be "p H", `{number} kg` should be
+"{number} kilograms". Replacing before the normalizer breaks grammar (German `1 Kilogramm` would be
+"eins Kilogramm"), and replacing after it misses because numbers are already words. A `RuleSet`
+runs inside the pipeline instead:
+
+```python
+from normt2s import Normalizer, Rule, RuleSet
+
+rules = RuleSet([
+    Rule("pH", "p H", case_sensitive=True),
+    Rule("{number} kg", "{number} Kilogramm"),
+    Rule("{number} Std.", "{number} Stunde", gender="f", plural="Stunden"),
+    Rule("Δ", "Delta", whole_word=False),
+])
+n = Normalizer("de")
+n.normalize("1 kg bei pH 7", rules=rules)          # 'ein Kilogramm bei p H sieben'
+
+applied = []
+n.normalize("pH 7", rules=rules, applied=applied)  # applied == [Rule("pH", "p H", ...)]
+```
+
+`Rule(term, spoken, whole_word=True, case_sensitive=False, gender=None, plural=None)` is a frozen
+dataclass. A `RuleSet` is immutable and hashable by content, so you can cache one per user with
+`functools.lru_cache`. One shared `Normalizer` per language serves any number of rule sets, and a
+rule set never changes the lexicon. `n.stream(rules=...)` and `n.normalize_stream(chunks,
+rules=...)` take it too, and `normalize(text, "en", rules)` as well.
+
+Load rules from data:
+
+```python
+RuleSet.from_dicts([{"term": "pH", "spoken": "p H", "case_sensitive": True}])
+RuleSet.load("rules.json")      # {"rules": [ ...same dictionaries... ]}
+```
+
+`from_dicts` also accepts the camelCase keys `caseSensitive` and `wholeWord`, which JavaScript
+front ends usually send.
+
+How terms match:
+
+- A term is **literal text**, no regular expressions. A space matches any run of whitespace, so
+  `e. g.` also matches across a line break.
+- `{number}` matches `5`, `1,5`, `3.000,25` or `1,234.5` (a leading minus is included) and may be
+  used several times; `{number}` in `spoken` is replaced in order by the number in words.
+- `whole_word=True` keeps a rule from matching inside a word: `N` does not match in `Newton`, but
+  `kg` matches in `10kg`. Terms that start or end with a symbol (`°C`, `≈`) need no guard.
+- The longest term wins, then plain terms before templates, then case-sensitive before
+  case-insensitive. Text is scanned once from left to right and a replacement is never matched
+  again. A replacement that would touch a neighbouring letter or digit is padded with a space
+  (`Δt` is "Delta t").
+- After `{number}`, the spoken word is looked up among the units: its gender is used for the
+  number (German `1 kg` is "ein Kilogramm") and singular or plural is chosen from the value
+  (`21 min` becomes "einundzwanzig Minuten"). `gender=` and `plural=` override this.
+- Empty terms are ignored. Terms longer than 200 characters and sets of more than 2,000 rules
+  raise `ValueError`.
+
 ## Math (LaTeX)
 
 Math in `$...$`, `$$...$$`, `\(...\)` and `\[...\]` is read aloud:
@@ -340,9 +397,10 @@ Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect", markdow
 |---|---|
 | `normalize(text, lang="en")` | one-shot helper; `lang` may be a code or your own `Normalizer` |
 | `get_normalizer(lang)` | the shared instance behind `normalize(text, "en")` |
-| `n.normalize(text)` (or `n(text)`) | normalize a string |
-| `n.stream(max_buffer=400)` | a `StreamNormalizer` with `feed()` and `flush()` |
-| `n.normalize_stream(chunks)` | generator over speakable pieces |
+| `n.normalize(text, rules=None, applied=None)` (or `n(text)`) | normalize a string, optionally with a `RuleSet` |
+| `n.stream(max_buffer=400, rules=None)` | a `StreamNormalizer` with `feed()` and `flush()` |
+| `n.normalize_stream(chunks, rules=None)` | generator over speakable pieces |
+| `Rule(...)`, `RuleSet(rules)`, `RuleSet.from_dicts(...)`, `RuleSet.load(path)` | user pronunciation rules (see above) |
 | `n.add_*`, `n.load_lexicon(path)` | extend the dictionaries (see above) |
 | `n.lexicon` | the underlying `Lexicon` with the LaTeX methods |
 
@@ -357,6 +415,7 @@ thread never sees half-built patterns, even while another thread calls `add_abbr
 Text is split into spans. Code, URLs, e-mails and HTML are kept as they are, math goes to the
 LaTeX speaker, and everything else runs through these steps:
 
+0. **Rule sets**, if given (their output is parked and restored at the end)
 1. **Abbreviations** (`Dr.` → "Doctor")
 2. **Dates** (`15.03.2024`, `March 3rd`)
 3. **Symbols that need digits** (`5 - 3`, `x^2`)
@@ -370,6 +429,7 @@ src/normt2s/
   __init__.py      public API: normalize, get_normalizer
   normalizer.py    the pipeline above (start reading here)
   lexicon.py       the editable dictionaries and how they are loaded
+  rules.py         user rule sets (Rule, RuleSet)
   stream.py        buffering for streamed text
   markdown.py      Markdown marker stripping
   latex.py         LaTeX tokenizer, parser and speaker

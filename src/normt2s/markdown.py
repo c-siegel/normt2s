@@ -11,8 +11,8 @@ from __future__ import annotations
 import re
 from typing import List, Tuple
 
-PLACEHOLDER = r"\d+"
-_PH_RE = re.compile("(\\d+)")
+PLACEHOLDER = r"\uE000\d+\uE001"
+_PH_RE = re.compile("\uE000(\\d+)\uE001")
 _FENCE_RE = re.compile(r"```[^\n`]*\n?(.*?)\n?```", re.S)
 
 _MAX = 500  # longest emphasised run; keeps unclosed markers from scanning the whole input
@@ -20,7 +20,6 @@ _MAX = 500  # longest emphasised run; keeps unclosed markers from scanning the w
 _HR = re.compile(r"^[ \t]*([-*_])[ \t]*(?:\1[ \t]*){2,}$", re.M)
 _BLOCK = re.compile(r"^(?:[ \t]{0,3}#{1,6}[ \t]+|(?:[ \t]*>)+[ \t]*|[ \t]*[-*+][ \t]+|[ \t]*\d+[.)][ \t]+)",
                     re.M)
-_LINK = re.compile("(!?)\\[([^\\]\\n]*)(\\d+)")
 _BOLD = re.compile(r"\*\*(?=\S)(.{1,%d}?)(?<=\S)\*\*|(?<!\w)__(?=\S)(.{1,%d}?)(?<=\S)__(?!\w)"
                    % (_MAX, _MAX))
 _ITALIC = re.compile(
@@ -46,7 +45,7 @@ def strip(text: str, span_re: "re.Pattern[str]", mid_line: bool = False) -> Tupl
             saved.append(("link", g))
         else:
             saved.append(("span", g))
-        return f"{len(saved) - 1}"
+        return f"\uE000{len(saved) - 1}\uE001"
 
     text = span_re.sub(mask, text)
 
@@ -58,11 +57,7 @@ def strip(text: str, span_re: "re.Pattern[str]", mid_line: bool = False) -> Tupl
     text = _BLOCK.sub("", text)
     text = first + text
 
-    def link(m: "re.Match[str]") -> str:
-        kind, _ = saved[int(m.group(3))]
-        return m.group(2) if kind == "link" else m.group()
-
-    text = _LINK.sub(link, text)
+    text = _links(text, saved)
     text = _BOLD.sub(lambda m: m.group(1) or m.group(2), text)
 
     def italic(m: "re.Match[str]") -> str:
@@ -80,13 +75,45 @@ def strip(text: str, span_re: "re.Pattern[str]", mid_line: bool = False) -> Tupl
     return text, [orig for kind, orig in saved]
 
 
-_LINK_RAW = re.compile(r"!?\[[^\]\n]*\]\([^)\s]*\)")
+_LINK_TARGET = re.compile(r"\]\([^)\s]*\)")
+
+
+def _label_start(text: str, floor: int, end: int) -> int:
+    """Index of the ``[`` (or ``![``) opening a link label that ends at ``end``, else -1."""
+    j = text.rfind("[", floor, end)
+    if j < 0 or "]" in text[j + 1:end] or "\n" in text[j + 1:end]:
+        return -1
+    return j - 1 if j > floor and text[j - 1] == "!" else j
+
+
+def _links(text: str, saved: List[Tuple[str, str]]) -> str:
+    """``[label]<link target>`` -> ``label`` (the target is a placeholder). Linear time."""
+    out, pos, floor = [], 0, 0
+    for m in _PH_RE.finditer(text):
+        if saved[int(m.group(1))][0] != "link":
+            continue
+        start = _label_start(text, max(pos, floor), m.start())
+        floor = m.end()
+        if start < 0:
+            continue
+        label_from = text.index("[", start) + 1
+        out.append(text[pos:start])
+        out.append(text[label_from:m.start()])
+        pos = m.end()
+    out.append(text[pos:])
+    return "".join(out)
 
 
 def inline_spans(text: str, span_re: "re.Pattern[str]") -> List[Tuple[int, int]]:
     """Spans of complete emphasis, strike-through and links; a stream must not cut inside them."""
-    masked = span_re.sub(lambda m: "" * len(m.group()), text)
-    spans = [m.span() for pat in (_BOLD, _ITALIC, _STRIKE, _LINK_RAW) for m in pat.finditer(masked)]
+    masked = span_re.sub(lambda m: "\uE001" * len(m.group()), text)
+    spans = [m.span() for pat in (_BOLD, _ITALIC, _STRIKE) for m in pat.finditer(masked)]
+    floor = 0
+    for m in _LINK_TARGET.finditer(text):
+        start = _label_start(text, floor, m.start())
+        floor = m.end()
+        if start >= 0:
+            spans.append((start, m.end()))
     return spans
 
 

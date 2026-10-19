@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from .lexicon import Lexicon
 from .normalizer import Normalizer
+from .rules import Rule, RuleSet
 from .stream import StreamNormalizer
 
-__all__ = ["Normalizer", "Lexicon", "StreamNormalizer", "normalize", "get_normalizer"]
+__all__ = ["Normalizer", "Lexicon", "StreamNormalizer", "Rule", "RuleSet", "normalize",
+           "get_normalizer"]
 __version__ = "0.1.0"
 
 _cache: Dict[str, Normalizer] = {}
@@ -22,7 +24,7 @@ def get_normalizer(lang: str = "en") -> Normalizer:
     return n
 
 
-def normalize(text: str, lang: Union[str, Normalizer] = "en") -> str:
+def normalize(text: str, lang: Union[str, Normalizer] = "en", rules: Optional[RuleSet] = None) -> str:
     """Normalize ``text``.
 
     ``lang`` is a language code (uses the shared instance from :func:`get_normalizer`) or your
@@ -31,4 +33,4 @@ def normalize(text: str, lang: Union[str, Normalizer] = "en") -> str:
     *separate* instance and is not seen by ``normalize(text, "de")``.
     """
     n = lang if isinstance(lang, Normalizer) else get_normalizer(lang)
-    return n.normalize(text)
+    return n.normalize(text, rules)

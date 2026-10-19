@@ -18,3 +18,6 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
   "U two hundred thirty-five". New lexicon list `spelled`, `add_spelled`, `data/elements.json`.
 - **New (F2):** `markdown="strip"` removes Markdown markers (off by default). Streams hold back
   unclosed markers. The e-mail pattern no longer takes quadratic time on long runs of `_`.
+- **New (F6):** `Rule` and `RuleSet`: literal pronunciation rules with a `{number}` placeholder that
+  run inside the pipeline (`normalize(text, rules=..., applied=...)`, `stream(rules=...)`).
+  `Lexicon.unit_nouns` is a new reverse index of unit words.

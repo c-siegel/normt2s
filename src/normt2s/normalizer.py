@@ -15,11 +15,12 @@ from .langs import Language, get_language
 from . import markdown as _md
 from .latex import LatexSpeaker, find_bare
 from .lexicon import Lexicon
+from .rules import NUMBER, Rule, RuleSet
 
 _PROTECT = (
     r"(?s:```.*?```)"
     r"|`[^`\n]+`"
-    r"|\d+"
+    r"|\uE000\d+\uE001"
     r"|\]\([^)\s]*\)"
     r"|https?://[^\s<>\"]*[^\s<>\".,;:!?)\]]"
     r"|www\.[^\s<>\"]*[^\s<>\".,;:!?)\]]"
@@ -61,6 +62,26 @@ class _Compiled(NamedTuple):
     punct: Any
     spelled_re: Any
     iso_re: Any
+
+
+# Rule output is parked behind placeholders (no digits, no word characters) during the pipeline.
+_RULE_PH = re.compile("\uE002([\uE100-\uE1FF]+)\uE003")
+
+
+def _encode(n: int) -> str:
+    digits = []
+    while True:
+        n, d = divmod(n, 256)
+        digits.append(chr(0xE100 + d))
+        if not n:
+            return "\uE002" + "".join(reversed(digits)) + "\uE003"
+
+
+def _decode(s: str) -> int:
+    n = 0
+    for ch in s:
+        n = n * 256 + ord(ch) - 0xE100
+    return n
 
 
 _DIGIT_RE = re.compile(r"\d")
@@ -134,42 +155,46 @@ class Normalizer:
         return self
 
     # --------------------------------------------------------------- public API
-    def normalize(self, text: str, *, _mid_line: bool = False) -> str:
+    def normalize(self, text: str, rules: Optional[RuleSet] = None,
+                  applied: Optional[list] = None, *, _mid_line: bool = False) -> str:
+        """Normalize ``text``. ``rules`` is an optional :class:`~normt2s.rules.RuleSet`; every
+        rule that matched is appended once to ``applied`` (a list) in order of first match."""
         if not text:
             return text
         if not self._markdown:
-            return self._run(text)
+            return self._run(text, rules, applied)
         text, verbatim = _md.strip(text, SPAN_RE, _mid_line)
-        return _md.restore(self._run(text), verbatim)
+        return _md.restore(self._run(text, rules, applied), verbatim)
 
-    def _run(self, text: str) -> str:
+    def _run(self, text: str, rules: Optional[RuleSet] = None, applied: Optional[list] = None) -> str:
         c = self.ensure_compiled()
         out = []
         pos = 0
         for m in SPAN_RE.finditer(text):
             if m.start() > pos:
-                out.append(self._gap(text[pos:m.start()], c))
+                out.append(self._gap(text[pos:m.start()], c, rules, applied))
             spoken = None
             if self._latex is not None and m.lastgroup in ("m1", "m2", "m3", "m4"):
                 spoken = self._latex.speak(m.group(m.lastgroup))
             out.append(m.group() if spoken is None else spoken)
             pos = m.end()
         if pos == 0:
-            return self._gap(text, c)
+            return self._gap(text, c, rules, applied)
         if pos < len(text):
-            out.append(self._gap(text[pos:], c))
+            out.append(self._gap(text[pos:], c, rules, applied))
         return "".join(out)
 
     __call__ = normalize
 
-    def stream(self, max_buffer: int = 400):
+    def stream(self, max_buffer: int = 400, *, rules: Optional[RuleSet] = None):
         """A stateful wrapper for token-by-token LLM output, see :class:`StreamNormalizer`."""
         from .stream import StreamNormalizer
 
-        return StreamNormalizer(self, max_buffer)
+        return StreamNormalizer(self, max_buffer, rules=rules)
 
-    def normalize_stream(self, chunks: Iterable[str], max_buffer: int = 400) -> Iterator[str]:
-        s = self.stream(max_buffer)
+    def normalize_stream(self, chunks: Iterable[str], max_buffer: int = 400, *,
+                         rules: Optional[RuleSet] = None) -> Iterator[str]:
+        s = self.stream(max_buffer, rules=rules)
         for chunk in chunks:
             out = s.feed(chunk)
             if out:
@@ -178,15 +203,16 @@ class Normalizer:
         if out:
             yield out
 
-    def _gap(self, text: str, c: _Compiled) -> str:
+    def _gap(self, text: str, c: _Compiled, rules: Optional[RuleSet] = None,
+             applied: Optional[list] = None) -> str:
         """Text between protected spans: bare LaTeX runs are kept (or spoken), the rest normalized."""
         runs = find_bare(text, self.lexicon) if "\\" in text else ()
         if not runs:
-            return self._plain(text, c)
+            return self._plain(text, c, rules, applied)
         out, pos = [], 0
         for start, end, speakable in runs:
             if start > pos:
-                out.append(self._plain(text[pos:start], c))
+                out.append(self._plain(text[pos:start], c, rules, applied))
             spoken = None
             if speakable and self._bare_speak:
                 spoken = self._bare.speak(text[start:end])
@@ -200,7 +226,7 @@ class Normalizer:
                     out.append(" ")
             pos = end
         if pos < len(text):
-            out.append(self._plain(text[pos:], c))
+            out.append(self._plain(text[pos:], c, rules, applied))
         return "".join(out)
 
     # ------------------------------------------------------------- compilation
@@ -328,8 +354,17 @@ class Normalizer:
                          spelled_re, iso_re)
 
     # ---------------------------------------------------------------- pipeline
-    def _plain(self, text: str, c: Optional[_Compiled] = None) -> str:
+    def _plain(self, text: str, c: Optional[_Compiled] = None, rules: Optional[RuleSet] = None,
+               applied: Optional[list] = None) -> str:
         c = c or self.ensure_compiled()
+        if rules is None or not rules.rules:
+            return self._plain_core(text, c)
+        spoken: list = []
+        text = self._apply_rules(text, rules, applied, spoken)
+        text = self._plain_core(text, c)
+        return _RULE_PH.sub(lambda m: spoken[_decode(m.group(1))], text) if spoken else text
+
+    def _plain_core(self, text: str, c: _Compiled) -> str:
         if _DIGIT_RE.search(text):
             if c.spelled_re:
                 text = c.spelled_re.sub(self._spelled_sub, text)
@@ -346,6 +381,88 @@ class Normalizer:
         if c.punct_re:
             text = c.punct_re.sub(lambda m: self._punct_sub(m, c), text)
         return c.post_re.sub(lambda m: self._post_sub(m, c), text)
+
+    # ------------------------------------------------------------------- rule sets
+    def _apply_rules(self, text: str, rules: RuleSet, applied: Optional[list], spoken: list) -> str:
+        """Replace rule matches by placeholders; their final text is stored in ``spoken``."""
+        out, pos = [], 0
+        for m, rule in rules.scan(text):
+            words = self._rule_words(rule, m)
+            if words is None:  # a number that cannot be parsed: leave it to the normal pipeline
+                continue
+            if applied is not None and rule not in applied:
+                applied.append(rule)
+            start, end = m.start(), m.end()
+            if words[:1].isalnum() and text[start - 1:start].isalnum():
+                words = " " + words
+            if words[-1:].isalnum() and text[end:end + 1].isalnum():
+                words += " "
+            out.append(text[pos:start])
+            out.append(_encode(len(spoken)))
+            spoken.append(words)
+            pos = end
+        if not spoken:
+            return text
+        out.append(text[pos:])
+        return "".join(out)
+
+    def _parse_number(self, raw: str):
+        """``"3.000,25"`` -> ``("3000", "25", False)`` using the language's separators."""
+        neg = raw[:1] in ("-", "−")
+        if neg:
+            raw = raw[1:]
+        ts, ds = self.lang.thousands_sep, self.lang.decimal_sep
+        seps = [ch for ch in raw if ch in ".,"]
+        if not seps:
+            return raw, None, neg
+        last = seps[-1]
+        if len(set(seps)) == 2 or seps.count(last) > 1:
+            if len(set(seps)) == 2:
+                cut = raw.rindex(last)
+                if seps.count(last) != 1:
+                    return None
+                whole, frac = raw[:cut], raw[cut + 1:]
+                group = "," if last == "." else "."
+            else:
+                whole, frac, group = raw, None, last
+            if not re.fullmatch(r"\d{1,3}(?:%s\d{3})+" % re.escape(group), whole):
+                return None
+            return whole.replace(group, ""), frac, neg
+        whole, frac = raw.split(last)
+        if last == ts and len(frac) == 3 and 1 <= len(whole) <= 3:
+            return whole + frac, None, neg
+        return whole, frac, neg
+
+    def _rule_words(self, rule: Rule, m: "re.Match[str]") -> Optional[str]:
+        parts = rule.spoken.split(NUMBER)
+        if len(parts) == 1:
+            return rule.spoken
+        index = int(m.lastgroup[1:])
+        nouns = self.lexicon.unit_nouns
+        out = [parts[0]]
+        for j, tail in enumerate(parts[1:]):
+            raw = m.groupdict().get(f"n{index}_{j}")
+            if raw is None:
+                out.append(NUMBER + tail)
+                continue
+            parsed = self._parse_number(raw)
+            if parsed is None:
+                return None
+            ip, frac, neg = parsed
+            one = frac is None and not neg and len(ip) <= _MAX_INT_DIGITS and int(ip) == 1
+            gender = rule.gender if j == 0 else None
+            noun = re.match(r"\s*[^\W\d_][\w-]*", tail)
+            if noun is not None:
+                word = noun.group().strip()
+                if j == 0 and rule.plural is not None:
+                    if not one:
+                        tail = tail.replace(word, rule.plural, 1)
+                elif word in nouns:
+                    form = nouns[word]
+                    gender = gender or form.gender
+                    tail = tail.replace(word, form.pick(one), 1)
+            out.append(self._words(ip, frac, neg, None if frac is not None else gender) + tail)
+        return "".join(out)
 
     def _spelled_sub(self, m: "re.Match[str]") -> str:
         parts = re.findall(r"[^\W\d_]|\d+", m.group())
