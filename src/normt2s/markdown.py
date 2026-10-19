@@ -75,7 +75,7 @@ def strip(text: str, span_re: "re.Pattern[str]", mid_line: bool = False) -> Tupl
     return text, [orig for kind, orig in saved]
 
 
-_LINK_TARGET = re.compile(r"\]\([^)\s]*\)")
+_LINK_TARGET = re.compile(r"\]\([^)\s]{0,300}\)")
 
 
 def _label_start(text: str, floor: int, end: int) -> int:

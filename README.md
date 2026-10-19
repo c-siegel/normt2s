@@ -6,9 +6,10 @@ slash h".
 
 - **English and German**
 - **No dependencies**, pure Python 3.9+, MIT licensed
-- **Fast**: about 90 µs for a typical sentence
+- **Fast**: about 100 µs for a typical sentence
 - **Streaming-ready**: works on LLM output as it arrives, token by token
-- **Easy to extend**: add words with one line of code or a small JSON file
+- **Easy to extend**: add words with one line of code or a small JSON file, or let users bring their own pronunciation rules
+- **LLM-ready**: optional Markdown stripping, bare LaTeX and chemical formulas
 
 ```python
 from normt2s import normalize
@@ -25,14 +26,16 @@ normalize("Der Zug fährt 120 km/h, z. B. um 14:30.", lang="de")
 1. [Install](#install)
 2. [What gets converted](#what-gets-converted)
 3. [Adding your own words](#adding-your-own-words)
-4. [Math (LaTeX)](#math-latex)
-5. [Streaming LLM output](#streaming-llm-output)
-6. [Reference: options and API](#reference-options-and-api)
-7. [How it works](#how-it-works)
-8. [Adding a language](#adding-a-language)
-9. [Performance](#performance)
-10. [Known limitations](#known-limitations)
-11. [Development](#development)
+4. [Markdown](#markdown)
+5. [Rule sets for pronunciations](#rule-sets-for-pronunciations)
+6. [Math (LaTeX)](#math-latex)
+7. [Streaming LLM output](#streaming-llm-output)
+8. [Reference: options and API](#reference-options-and-api)
+9. [How it works](#how-it-works)
+10. [Adding a language](#adding-a-language)
+11. [Performance](#performance)
+12. [Known limitations](#known-limitations)
+13. [Development](#development)
 
 ## Install
 
@@ -459,9 +462,12 @@ list lives in `data/`.
 
 | Input | Time |
 |---|---|
-| a typical sentence (74 characters) | about 90 µs |
-| a 600-character paragraph | about 0.9 ms |
-| one-time startup (building and compiling) | about 30 ms |
+| a typical sentence (74 characters) | about 100 µs |
+| a 600-character paragraph | about 0.85 ms |
+| a 700-character Markdown paragraph (`markdown="strip"`) | about 0.7 ms |
+| the sentence with a 200-rule `RuleSet` | about 130 µs |
+| streaming 1,000 one-character chunks | about 13 ms |
+| one-time startup (building and compiling) | about 25 ms |
 
 ## Known limitations
 
@@ -490,6 +496,12 @@ pip install -e .[dev]
 pytest
 python benchmarks/bench.py
 ```
+
+Before 1.0, a minor release may change spoken output and a patch release never does, so pin
+`normt2s>=0.2,<0.3`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
+files in `tests/golden/` list typical inputs and their output per language.
+The hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`, `$`, `\`,
+`` ` ``, `[` and `::`.
 
 The tests double as documentation: `tests/test_en.py` and `tests/test_de.py` list the expected
 output for each rule.

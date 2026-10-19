@@ -17,7 +17,7 @@ from . import markdown as _md
 from .normalizer import SPAN_RE
 
 _FENCE_RE = re.compile(r"(?s)```.*?```")
-_SENTENCE_RE = re.compile(r"[.!?…]+[\"')\]”’»]*[ \t]+")
+_SENTENCE_RE = re.compile(r"(?<![.!?…])[.!?…]+[\"')\]”’»]*[ \t]+")
 _CODE_RE = re.compile(r"`[^`\n]*`")
 _OPEN_STAR = re.compile(r"(?<![\d)\]*\\])\*(?![\s*])")
 _OPEN_UNDER = re.compile(r"(?<!\w)_(?![\s_])")
