@@ -31,9 +31,9 @@ def test_normalize_is_fast(normalizers, unit):
     for n in normalizers:
         best = 9.0
         for _ in range(3):  # best of three keeps a busy machine from failing the test
-            t = time.perf_counter()
+            t = time.process_time()
             n.normalize(text)
-            best = min(best, time.perf_counter() - t)
+            best = min(best, time.process_time() - t)
         assert best < 0.4, (unit, n.lang.code)  # about 0.1 s alone; margin for busy CI machines
 
 
@@ -41,18 +41,18 @@ def test_normalize_is_fast(normalizers, unit):
 def test_normalize_with_rules_and_extra_units(normalizers, unit):
     # a generous bound: this only catches super-linear behaviour, which takes seconds
     for n in normalizers:
-        t = time.perf_counter()
+        t = time.process_time()
         n.normalize(_text(unit))
         n.normalize(_text(unit), rules=RULES)
-        assert time.perf_counter() - t < 2.0, (unit, n.lang.code)
+        assert time.process_time() - t < 2.0, (unit, n.lang.code)
 
 
 @pytest.mark.parametrize("unit", PLAN_UNITS + EXTRA_UNITS)
 def test_stream(normalizers, unit):
     text = _text(unit)
     s = normalizers[2].stream(rules=RULES)
-    t = time.perf_counter()
+    t = time.process_time()
     for i in range(0, len(text), 25_000):  # a few big feeds; every feed re-scans the buffer
         s.feed(text[i:i + 25_000])
     s.flush()
-    assert time.perf_counter() - t < 8.0, unit
+    assert time.process_time() - t < 8.0, unit

@@ -63,10 +63,10 @@ def test_invalid_mode():
 @pytest.mark.parametrize("ch", ["*", "_", "~", "`", "[", "#", ">", "-"])
 def test_hostile(md, ch):
     text = ch * 10_000
-    t = time.perf_counter()
+    t = time.process_time()
     md.normalize(text)
     md.normalize((ch + "a ") * 5_000)
-    assert time.perf_counter() - t < 1.0
+    assert time.process_time() - t < 1.0
 
 
 DOC = (

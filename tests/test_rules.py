@@ -230,10 +230,10 @@ def test_200_rules_at_most_double():
     en.normalize(sentence, rules=rules)
 
     def bench(**kw):
-        t = time.perf_counter()
+        t = time.process_time()
         for _ in range(300):
             en.normalize(sentence, **kw)
-        return time.perf_counter() - t
+        return time.process_time() - t
 
     base = min(bench() for _ in range(5))
     with_rules = min(bench(rules=rules) for _ in range(5))

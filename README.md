@@ -87,6 +87,7 @@ Every row is real output from the library.
 | | `am 3. Mai`, `im Mai 2024` | am dritten Mai, im Mai zweitausendvierundzwanzig |
 | Time | `um 14:30` | um vierzehn Uhr dreißig |
 | Units | `1 kg`, `1 min`, `21 min` | ein Kilogramm, eine Minute, einundzwanzig Minuten |
+| Number + unit word | `1 Stunde`, `1 Kilogramm`, `21 Stunden` | eine Stunde, ein Kilogramm, einundzwanzig Stunden |
 | Currency | `3,50 €`, `5 €` | drei Euro fünfzig Cent, fünf Euro |
 | Abbreviations | `z. B.`, `ca. 5 Mio.` | zum Beispiel, circa fünf Millionen |
 
@@ -554,8 +555,9 @@ list lives in `data/`.
   (`5 - 3`). In `x - 1` it is left as it is. In LaTeX math it is always read.
 - **German ordinal dots** are only recognised in dates (`am 3. Mai`), not in general
   (`der 3. Platz`).
-- **German number + noun:** `1 Stunde` reads "eins Stunde", because the gender of a spelled-out
-  noun is unknown. Use the unit symbol (`1 h`) to get "eine Stunde".
+- **German number + noun:** the gender of a number is only known for nouns that are units in the
+  lexicon (`1 Stunde` is "eine Stunde", `1 Kilogramm` is "ein Kilogramm"). Other nouns stay
+  `1 Haus` -> "eins Haus"; add the noun with `add_unit` to teach it.
 - **Dates:** English `3/15/2024` and `15 March 2024` are not handled, and neither are German
   two-digit years.
 - **Durations** such as `1:30:15` are not recognised.

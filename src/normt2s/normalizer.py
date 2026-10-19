@@ -87,6 +87,7 @@ def _decode(s: str) -> int:
     return n
 
 
+_NEXT_WORD = re.compile(r" ([^\W\d_][\w-]*)")
 _DIGIT_RE = re.compile(r"\d")
 _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
@@ -587,7 +588,10 @@ class Normalizer:
         if (len(intpart) > 1 and intpart[0] == "0") or len(intpart) > _MAX_INT_DIGITS:
             words = lang.digits(intpart)
         else:
-            words = lang.cardinal(int(intpart), gender)
+            # a gender only shows on exactly 1: "eine Stunde", but "hunderteins Stunden" and
+            # "eins Komma fünf Kilogramm"
+            value = int(intpart)
+            words = lang.cardinal(value, gender if frac is None and value == 1 else None)
         if frac is not None:
             words += f" {lang.point} {lang.digits(frac)}"
         return f"{lang.minus} {words}" if neg else words
@@ -661,7 +665,10 @@ class Normalizer:
                 and c.year_re and c.year_re.search(text[max(0, m.start() - 20):m.start()])):
             words = lang.year(int(intpart))
         else:
-            words = self._words(intpart, frac, neg)
+            # gender of a known unit noun that follows: "1 Stunde" -> "eine Stunde"
+            noun = _NEXT_WORD.match(text, end) if frac is None else None
+            form = lex.unit_nouns.get(noun.group(1)) if noun else None
+            words = self._words(intpart, frac, neg, form.gender if form else None)
         # "3D" -> "three D", but keep "5s" -> "fives"
         if end < len(text) and text[end].isalpha():
             if not (text[end] == "s" and not text[end + 1:end + 2].isalpha()):

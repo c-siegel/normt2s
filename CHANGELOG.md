@@ -2,6 +2,13 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## Unreleased (0.4.0)
+
+- **Output change (F11, German):** a number before a known unit noun takes its gender: `1 Stunde` ->
+  "eine Stunde" (was "eins Stunde"), `1 Kilogramm` -> "ein Kilogramm".
+- **Bug fix (German):** a gender only shows on exactly 1: `101 h` -> "einhunderteins Stunden" (was
+  "einhunderteine"), `1,5 kg` -> "eins Komma fünf Kilogramm" (was "ein Komma fünf").
+
 ## 0.3.0
 
 - **New (F10):** `add_protected(pattern, spoken=None, opener=None)` and a `protected` list in lexicon files.
