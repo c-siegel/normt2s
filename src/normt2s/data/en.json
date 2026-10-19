@@ -346,6 +346,7 @@
   "³": "cubed",
   "#": "number"
  },
+ "spelled": ["CO2", "H2O", "O2", "O3", "N2", "H2", "CH4", "NH3", "NaCl", "H2SO4", "HCl", "NaOH", "CaCO3", "SO2", "NO2", "C6H12O6"],
  "punctuation": {
   "—": ", "
  },

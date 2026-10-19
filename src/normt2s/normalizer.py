@@ -57,6 +57,8 @@ class _Compiled(NamedTuple):
     date_re: Any
     punct_re: Any
     punct: Any
+    spelled_re: Any
+    iso_re: Any
 
 
 _DIGIT_RE = re.compile(r"\d")
@@ -64,7 +66,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 15))
+_EMPTY = _Compiled(-1, *([None] * 17))
 
 
 class Normalizer:
@@ -101,6 +103,10 @@ class Normalizer:
 
     def add_symbol(self, key: str, word: str) -> "Normalizer":
         self.lexicon.add_symbol(key, word)
+        return self
+
+    def add_spelled(self, token: str) -> "Normalizer":
+        self.lexicon.add_spelled(token)
         return self
 
     def add_punctuation(self, char: str, replacement: str) -> "Normalizer":
@@ -261,13 +267,26 @@ class Normalizer:
         punct_re = re.compile(
             r"[ 	]*(?P<p>[" + "".join(esc(k) for k in lex.punctuation) + r"])[ 	]*"
         ) if lex.punctuation else None
+        def spelled_key(k: str) -> str:
+            return "".join(r"_?\d" if ch.isdigit() else esc(ch) for ch in k)
+
+        spelled_re = re.compile(
+            r"(?<!\w)(?:" + "|".join(spelled_key(k) for k in sorted(lex.spelled, key=len, reverse=True))
+            + r")(?!\w)") if lex.spelled else None
+        elements = "|".join(sorted(Lexicon.elements(), key=len, reverse=True))
+        iso_re = re.compile(rf"(?<![\w-])(?P<el>{elements})-(?P<n>\d{{1,3}})(?![\w-])")
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
         return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
-                         suffix_re, scale_re, year_re, range_re, date_re, punct_re, dict(lex.punctuation))
+                         suffix_re, scale_re, year_re, range_re, date_re, punct_re, dict(lex.punctuation),
+                         spelled_re, iso_re)
 
     # ---------------------------------------------------------------- pipeline
     def _plain(self, text: str, c: Optional[_Compiled] = None) -> str:
         c = c or self.ensure_compiled()
+        if _DIGIT_RE.search(text):
+            if c.spelled_re:
+                text = c.spelled_re.sub(self._spelled_sub, text)
+            text = c.iso_re.sub(self._isotope_sub, text)
         if c.abbr_re:
             text = c.abbr_re.sub(lambda m: self._abbr_sub(m, c), text)
         has_digit = _DIGIT_RE.search(text) is not None
@@ -280,6 +299,14 @@ class Normalizer:
         if c.punct_re:
             text = c.punct_re.sub(lambda m: self._punct_sub(m, c), text)
         return c.post_re.sub(lambda m: self._post_sub(m, c), text)
+
+    def _spelled_sub(self, m: "re.Match[str]") -> str:
+        parts = re.findall(r"[^\W\d_]|\d+", m.group())
+        return " ".join(self.lang.cardinal(int(p)) if p.isdigit() else p for p in parts)
+
+    def _isotope_sub(self, m: "re.Match[str]") -> str:
+        letters = " ".join(m.group("el"))
+        return f"{letters} {self.lang.cardinal(int(m.group('n')))}"
 
     @staticmethod
     def _punct_sub(m: "re.Match[str]", c: _Compiled) -> str:

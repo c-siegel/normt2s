@@ -33,7 +33,7 @@ def test_ordinal(n, expected):
     ("50% of 200", "fifty percent of two hundred"),
     ("PIN 007", "PIN zero zero seven"),
     ("Section 3.2.1 says", "Section three point two point one says"),
-    ("Windows 11 and H2O and mp3", "Windows eleven and H2O and mp3"),
+    ("Windows 11 and H2O and mp3", "Windows eleven and H two O and mp3"),
     ("a 3D model", "a three D model"),
     ("10–20 items", "ten to twenty items"),
 ])

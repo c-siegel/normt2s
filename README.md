@@ -68,6 +68,7 @@ Every row is real output from the library.
 | Currency | `$3.50`, `€5`, `5 EUR`, `$2.5 million` | three dollars and fifty cents, five euros, five euros, two point five million dollars |
 | Abbreviations | `Dr. Smith, e.g. ...`, `etc.` | Doctor Smith, for example ..., et cetera |
 | Math symbols | `2 + 3 = 5`, `x²`, `a ≤ b` | two plus three equals five, x squared, a is less than or equal to b |
+| Chemistry | `H2O`, `CO2`, `U-235` | H two O, C O two, U two hundred thirty-five |
 | Pauses | `The result — a success — was clear.` | The result, a success, was clear. |
 | Operators | `3 * 4 * 5`, `2*(x+1)`, `3 / 4` | three times four times five, two times (x plus one), three divided by four |
 
@@ -98,6 +99,17 @@ read between operands: `3 * 4 * 5`, `3*4*5` and `2*(x+1)` use "times"; `3 / 4` (
 uses "divided by". `1/2` stays a fraction, and `a * b`, `*word*`, `**bold**` and `and/or` are not
 touched. In a lexicon file, use an `"operators": {"*": "times", "/": "divided by"}` table.
 
+### Spelled tokens
+
+A TTS engine reads `CO2` as one made-up word, so a list of chemical formulas is spelled out:
+letters as themselves, digit runs as numbers (`H2O` is "H two O", `C6H12O6` is "C six H twelve
+O six"). `CO_2` matches too. Built in: `CO2 H2O O2 O3 N2 H2 CH4 NH3 NaCl H2SO4 HCl NaOH CaCO3 SO2 NO2
+C6H12O6`. Add more with `n.add_spelled("ATP5")` or a `"spelled": [...]` list in a lexicon file.
+Matching is whole-token: `ECO2000` and `CO23` are left alone.
+
+Isotopes written `U-235` (an element symbol, hyphen, one to three digits) are read without the
+hyphen: "U two hundred thirty-five". `A-4` (not an element) is not touched by this rule.
+
 ### Pauses
 
 Many TTS engines read an em dash (`—`) as "minus". By default it becomes a comma pause, and between
@@ -116,8 +128,8 @@ normalize("Run `pip install numpy==1.26` and open https://example.com/v1.2/page"
 ```
 
 Things that only look like numbers are kept too: versions with several dots are read digit by
-digit (`3.2.1` is "three point two point one"), and letters glued to digits (`H2O`, `mp3`) are
-not split.
+digit (`3.2.1` is "three point two point one"), and letters glued to digits (`mp3`, `ECO2000`) are
+not split. Listed formulas such as `H2O` are the exception, see *Spelled tokens*.
 
 ## Adding your own words
 
@@ -157,6 +169,7 @@ have already used.
 | A LaTeX command | `lexicon.add_latex_command(name, spoken)` | `("R", "the reals")` |
 | A LaTeX function | `lexicon.add_latex_function(name, spoken)` | `("sinc", "sinc")` |
 | A LaTeX sentence template | `lexicon.add_phrase(key, template)` | `("frac", "{a} divided by {b}")` |
+| A token spelled out letter by letter | `add_spelled(token)` | `("ATP5")` |
 | A character read as a pause | `add_punctuation(char, replacement)` | `("—", ", ")` |
 | Remove an entry | `lexicon.remove(kind, key)` | `("abbreviations", "vs.")` |
 

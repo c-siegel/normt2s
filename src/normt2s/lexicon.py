@@ -18,6 +18,12 @@ from typing import Callable, Dict, NamedTuple, Optional, Sequence, Set, Union
 from .langs import Language
 
 
+@functools.lru_cache(maxsize=None)
+def _elements() -> frozenset:
+    text = (resources.files("normt2s") / "data" / "elements.json").read_text("utf-8")
+    return frozenset(json.loads(text))
+
+
 def _locked(fn):
     @functools.wraps(fn)
     def wrapper(self, *a, **kw):
@@ -58,6 +64,8 @@ class Lexicon:
         self.operators: Dict[str, str] = {}
         # characters spoken as a pause: "—" -> ", "
         self.punctuation: Dict[str, str] = {}
+        # tokens spelled out letter by letter, digits as numbers: "CO2" -> "C O two"
+        self.spelled: Dict[str, None] = {}
         # LaTeX commands such as "\\times" -> "times" (also bare characters such as "/")
         self.latex_commands: Dict[str, str] = {}
         # LaTeX function names without backslash: "sin" -> "sine"
@@ -80,6 +88,11 @@ class Lexicon:
             return snap
 
     # ---------------------------------------------------------------- loading
+    @staticmethod
+    def elements() -> "frozenset":
+        """Chemical element symbols (shared by all languages)."""
+        return _elements()
+
     @classmethod
     def builtin(cls, lang: Language) -> "Lexicon":
         lex = cls(lang.pluralize)
@@ -112,6 +125,8 @@ class Lexicon:
             self.add_symbol(key, val)
         for key, val in data.get("operators", {}).items():
             self.add_operator(key, val)
+        for token in data.get("spelled", ()):
+            self.add_spelled(token)
         for key, val in data.get("punctuation", {}).items():
             self.add_punctuation(key, val)
         latex = data.get("latex", {})
@@ -163,6 +178,14 @@ class Lexicon:
         if not key or any(ch.isspace() for ch in key):
             raise ValueError(f"symbol key must be non-empty and contain no whitespace: {key!r}")
         self.symbols[key] = word
+        self.version += 1
+
+    @_locked
+    def add_spelled(self, token: str) -> None:
+        """``add_spelled("ATP")``: read ``token`` letter by letter (digit runs as numbers)."""
+        if not token or any(ch.isspace() for ch in token) or not token.isalnum():
+            raise ValueError(f"spelled token must be letters and digits only: {token!r}")
+        self.spelled[token] = None
         self.version += 1
 
     @_locked
