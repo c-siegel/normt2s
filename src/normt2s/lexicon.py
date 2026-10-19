@@ -6,13 +6,25 @@ Built-in data lives in ``normt2s/data/<lang>.json``. Extend or override it with
 
 from __future__ import annotations
 
+import copy
+import functools
 import json
+import threading
 import warnings
 from importlib import resources
 from pathlib import Path
 from typing import Callable, Dict, NamedTuple, Optional, Sequence, Set, Union
 
 from .langs import Language
+
+
+def _locked(fn):
+    @functools.wraps(fn)
+    def wrapper(self, *a, **kw):
+        with self.lock:
+            return fn(self, *a, **kw)
+
+    return wrapper
 
 
 class Form(NamedTuple):
@@ -51,6 +63,17 @@ class Lexicon:
         self._explicit: Set[str] = set()
         # bumped on every change so a Normalizer knows when to recompile its regexes
         self.version = 0
+        # guards edits and snapshots, so a Normalizer never compiles a half-edited lexicon
+        self.lock = threading.RLock()
+
+    def snapshot(self) -> "Lexicon":
+        """A copy whose dictionaries can be iterated while other threads edit the original."""
+        with self.lock:
+            snap = copy.copy(self)
+            for name, val in vars(self).items():
+                if isinstance(val, (dict, list, set)):
+                    setattr(snap, name, copy.copy(val))
+            return snap
 
     # ---------------------------------------------------------------- loading
     @classmethod
@@ -93,6 +116,7 @@ class Lexicon:
         return self
 
     # ------------------------------------------------------------------- edits
+    @_locked
     def add_abbreviation(self, key: str, to: str, *, final: bool = False,
                          capitalized: bool = True) -> None:
         """``add_abbreviation("e.g.", "for example")``.
@@ -109,12 +133,14 @@ class Lexicon:
                 self.abbreviations[cap] = Abbreviation(to[0].upper() + to[1:], final)
         self.version += 1
 
+    @_locked
     def add_unit(self, symbol: str, singular: str, plural: Optional[str] = None,
                  gender: Optional[str] = None) -> None:
         """``add_unit("kn", "knot")`` -> "5 kn" reads "five knots"."""
         self.units[symbol] = Form(singular, plural or self._pluralize(singular), gender)
         self.version += 1
 
+    @_locked
     def add_currency(self, symbol: str, major: Sequence, minor: Optional[Sequence] = None) -> None:
         """``add_currency("CHF", ("franc", "francs"), ("rappen", "rappen"))``."""
         def form(spec: Sequence) -> Form:
@@ -124,10 +150,12 @@ class Lexicon:
         self.currencies[symbol] = Currency(form(major), form(minor) if minor else None)
         self.version += 1
 
+    @_locked
     def add_symbol(self, key: str, word: str) -> None:
         self.symbols[key] = word
         self.version += 1
 
+    @_locked
     def add_latex_command(self, name: str, spoken: str) -> None:
         """``add_latex_command("R", "the real numbers")``; the backslash is optional."""
         if name.isalpha():
@@ -135,6 +163,7 @@ class Lexicon:
         self.latex_commands[name] = spoken
         self.version += 1
 
+    @_locked
     def add_latex_function(self, name: str, spoken: str) -> None:
         """``add_latex_function("sinc", "sinc")`` for ``\\sinc x``.
 
@@ -151,11 +180,13 @@ class Lexicon:
         self.latex_functions[name] = spoken
         self.version += 1
 
+    @_locked
     def add_phrase(self, key: str, template: str) -> None:
         """Override a LaTeX sentence template, e.g. ``add_phrase("frac", "{a} divided by {b}")``."""
         self.phrases[key] = template
         self.version += 1
 
+    @_locked
     def remove(self, kind: str, key: str) -> None:
         """``remove("abbreviations", "St.")``; ``kind`` is a Lexicon attribute name."""
         getattr(self, kind).pop(key)

@@ -7,8 +7,9 @@ Regexes are compiled lazily and recompiled only when the lexicon changes.
 from __future__ import annotations
 
 import re
+import threading
 from pathlib import Path
-from typing import Iterable, Iterator, Optional, Sequence, Union
+from typing import Any, Iterable, Iterator, NamedTuple, Optional, Sequence, Union
 
 from .langs import Language, get_language
 from .latex import LatexSpeaker
@@ -35,9 +36,32 @@ PROTECT_RE = re.compile(_PROTECT)
 # The above plus LaTeX math spans (spoken or kept, see ``Normalizer(latex=...)``).
 SPAN_RE = re.compile(_PROTECT + "|" + _MATH)
 
+
+
+class _Compiled(NamedTuple):
+    """Everything derived from the lexicon; replaced as one object so readers never see half."""
+
+    version: int
+    abbr: Any
+    abbr_re: Any
+    no_boundary_tokens: Any
+    sym: Any
+    pre_re: Any
+    post_re: Any
+    token_re: Any
+    suffix_re: Any
+    scale_re: Any
+    year_re: Any
+    range_re: Any
+    date_re: Any
+
+
 _DIGIT_RE = re.compile(r"\d")
 _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
+
+
+_EMPTY = _Compiled(-1, *([None] * 12))
 
 
 class Normalizer:
@@ -55,7 +79,8 @@ class Normalizer:
         self.lang = get_language(lang) if isinstance(lang, str) else lang
         self.lexicon = lexicon or Lexicon.builtin(self.lang)
         self._latex = LatexSpeaker(self) if latex == "speak" else None
-        self._compiled = -1
+        self._lock = threading.Lock()
+        self._c = _EMPTY
 
     # ------------------------------------------------------------ dictionary API
     def add_abbreviation(self, key: str, to: str, **kw) -> "Normalizer":
@@ -83,21 +108,21 @@ class Normalizer:
     def normalize(self, text: str) -> str:
         if not text:
             return text
-        self.ensure_compiled()
+        c = self.ensure_compiled()
         out = []
         pos = 0
         for m in SPAN_RE.finditer(text):
             if m.start() > pos:
-                out.append(self._plain(text[pos:m.start()]))
+                out.append(self._plain(text[pos:m.start()], c))
             spoken = None
             if self._latex is not None and m.lastgroup in ("m1", "m2", "m3", "m4"):
                 spoken = self._latex.speak(m.group(m.lastgroup))
             out.append(m.group() if spoken is None else spoken)
             pos = m.end()
         if pos == 0:
-            return self._plain(text)
+            return self._plain(text, c)
         if pos < len(text):
-            out.append(self._plain(text[pos:]))
+            out.append(self._plain(text[pos:], c))
         return "".join(out)
 
     __call__ = normalize
@@ -119,38 +144,53 @@ class Normalizer:
             yield out
 
     # ------------------------------------------------------------- compilation
-    def ensure_compiled(self) -> None:
-        if self._compiled != self.lexicon.version:
-            self._compile()
+    def ensure_compiled(self) -> _Compiled:
+        """The current compiled state; rebuilt (once, under a lock) after lexicon changes."""
+        c = self._c
+        if c.version != self.lexicon.version:
+            with self._lock:
+                c = self._c
+                if c.version != self.lexicon.version:
+                    c = self._c = self._compile()
+        return c
 
-    def _compile(self) -> None:
+    @property
+    def no_boundary_tokens(self):
+        return self._c.no_boundary_tokens
+
+    def _compile(self) -> _Compiled:
         lang, lex = self.lang, self.lexicon
         esc = re.escape
+        with lex.lock:
+            version = lex.version
+            snap = lex.snapshot()
+        return self._build(lang, snap, version, esc)
+
+    def _build(self, lang, lex, version, esc) -> _Compiled:
 
         # abbreviations: whitespace inside keys is optional ("z. B." matches "z.B.")
-        self._abbr = {re.sub(r"\s+", "", k): v for k, v in lex.abbreviations.items()}
+        abbr = {re.sub(r"\s+", "", k): v for k, v in lex.abbreviations.items()}
         keys = sorted(lex.abbreviations, key=len, reverse=True)
-        self._abbr_re = re.compile(
+        abbr_re = re.compile(
             r"(?<![\w.])(?:" + "|".join(r"\s*".join(esc(p) for p in k.split()) for k in keys)
             + r")(?!\w)") if keys else None
         # tokens after which a "." does NOT end a sentence (used by the stream splitter)
-        self.no_boundary_tokens = set()
+        no_boundary = set()
         for k in keys:
             toks = k.split()
-            self.no_boundary_tokens.update(toks[:-1])
+            no_boundary.update(toks[:-1])
             if toks[-1].endswith("."):
-                self.no_boundary_tokens.add(toks[-1])
+                no_boundary.add(toks[-1])
 
         # symbols that need digit context are handled before the number pass
         sym = lex.symbols
-        self._sym = sym
-        self._pre_re = re.compile(
+        pre_re = re.compile(
             r"(?<=\d) [-−] (?=\d)"        # 5 - 3
             r"|\^(?P<exp>-?\w+)"           # x^2
             r"|#(?=\d)"                    # #5
             r"|(?<![\w+])\+(?=\d)"         # +49
         )
-        self._post_re = re.compile(
+        post_re = re.compile(
             r"(?P<sq>(?<=[\w)\]])[²³])"
             + (r"|\s?(?P<op>[" + "".join(esc(c) for c in "×÷≠≤≥≈±−" if c in sym) + r"])\s?"
                if any(c in sym for c in "×÷≠≤≥≈±−") else "")
@@ -167,7 +207,7 @@ class Normalizer:
         plain = rf"\d+(?:{ds}\d+)?{guard}"
         cur_chars = "".join(esc(c) for c in lex.currencies if len(c) == 1)
         cur_pre = rf"(?:(?P<cur>[{cur_chars}])\s?)?" if cur_chars else ""
-        self._token_re = re.compile(
+        token_re = re.compile(
             r"(?<![\w.])" + (rf"(?P<neg0>[-−](?=[{cur_chars}]))?" if cur_chars else "")
             + cur_pre + r"(?P<neg>[-−](?=\d))?"
             r"(?:(?P<frac>\d{1,3}/\d{1,3})(?![\w/]|\.\d)"
@@ -193,32 +233,34 @@ class Normalizer:
             rf"(?P<unit>(?:[ {_NBSP}]?(?P<uf>{free or '(?!)'})|(?P<ua>{attached or '(?!)'}))"
             rf"(?:/(?P<den>{every or '(?!)'}))?(?![\w]))"
         )
-        self._suffix_re = re.compile("|".join(alts))
-        self._scale_re = re.compile(
+        suffix_re = re.compile("|".join(alts))
+        scale_re = re.compile(
             r"\s(?P<scale>" + "|".join(lang.scale_words) + r")(?![A-Za-z])", re.I
         ) if lang.scale_words else None
-        self._year_re = re.compile(
+        year_re = re.compile(
             r"(?:^|[\s(])(?:" + "|".join(esc(p) for p in lang.year_prepositions) + r")\s+$", re.I
         ) if lang.year_prepositions else None
-        self._range_re = re.compile(r"(?<=\d)\s?–\s?(?=\d)")
-        self._date_re = re.compile(lang.date_regex) if lang.date_regex else None
-        self._compiled = lex.version
+        range_re = re.compile(r"(?<=\d)\s?–\s?(?=\d)")
+        date_re = re.compile(lang.date_regex) if lang.date_regex else None
+        return _Compiled(version, abbr, abbr_re, no_boundary, sym, pre_re, post_re, token_re,
+                         suffix_re, scale_re, year_re, range_re, date_re)
 
     # ---------------------------------------------------------------- pipeline
-    def _plain(self, text: str) -> str:
-        if self._abbr_re:
-            text = self._abbr_re.sub(self._abbr_sub, text)
+    def _plain(self, text: str, c: Optional[_Compiled] = None) -> str:
+        c = c or self.ensure_compiled()
+        if c.abbr_re:
+            text = c.abbr_re.sub(lambda m: self._abbr_sub(m, c), text)
         has_digit = _DIGIT_RE.search(text) is not None
-        if has_digit and self._date_re:
-            text = self._date_re.sub(self._date_sub, text)
-        text = self._pre_re.sub(self._pre_sub, text)
+        if has_digit and c.date_re:
+            text = c.date_re.sub(self._date_sub, text)
+        text = c.pre_re.sub(lambda m: self._pre_sub(m, c), text)
         if has_digit:
-            text = self._range_re.sub(f" {self.lang.range_word} ", text)
-            text = self._numbers(text)
-        return self._post_re.sub(self._post_sub, text)
+            text = c.range_re.sub(f" {self.lang.range_word} ", text)
+            text = self._numbers(text, c)
+        return c.post_re.sub(lambda m: self._post_sub(m, c), text)
 
-    def _abbr_sub(self, m: "re.Match[str]") -> str:
-        entry = self._abbr[re.sub(r"\s+", "", m.group())]
+    def _abbr_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
+        entry = c.abbr[re.sub(r"\s+", "", m.group())]
         text, end = m.string, m.end()
         if entry.to and m.group().endswith("."):
             nxt = text[end:end + 3]
@@ -231,8 +273,8 @@ class Normalizer:
         before = m.string[max(0, m.start() - 12):m.start()]
         return self.lang.format_date(m, before) or m.group()
 
-    def _pre_sub(self, m: "re.Match[str]") -> str:
-        s, g = self._sym, m.group()
+    def _pre_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
+        s, g = c.sym, m.group()
         if g[0] == "^":
             exp = m.group("exp")
             if exp == "2" and "^2" in s:
@@ -246,8 +288,8 @@ class Normalizer:
             return s["+"] + " " if "+" in s else g
         return f" {s['−']} " if "−" in s else g
 
-    def _post_sub(self, m: "re.Match[str]") -> str:
-        s = self._sym
+    def _post_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
+        s = c.sym
         if m.group("sq"):
             return " " + s[m.group("sq")]
         for name in ("op", "eq", "cmp", "amp"):
@@ -259,15 +301,15 @@ class Normalizer:
         return m.group()
 
     # ------------------------------------------------------------------ numbers
-    def _numbers(self, text: str) -> str:
+    def _numbers(self, text: str, c: _Compiled) -> str:
         out = []
         pos = 0
-        search = self._token_re.search
+        search = c.token_re.search
         while True:
             m = search(text, pos)
             if not m:
                 break
-            words, end = self._render(m, text)
+            words, end = self._render(m, text, c)
             out.append(text[pos:m.start()])
             out.append(words)
             pos = end
@@ -284,7 +326,7 @@ class Normalizer:
             words += f" {lang.point} {lang.digits(frac)}"
         return f"{lang.minus} {words}" if neg else words
 
-    def _render(self, m: "re.Match[str]", text: str):
+    def _render(self, m: "re.Match[str]", text: str, c: _Compiled):
         lang, lex = self.lang, self.lexicon
         neg = m.group("neg") is not None or ("neg0" in m.re.groupindex and m.group("neg0") is not None)
         end = m.end()
@@ -297,7 +339,7 @@ class Normalizer:
         if m.group("time"):
             hh, mm = int(m.group("hh")), int(m.group("mm"))
             suffix = None
-            sm = self._suffix_re.match(text, end)
+            sm = c.suffix_re.match(text, end)
             if sm and sm.group("ampm") and 1 <= hh <= 12:
                 suffix, end = sm.group("ampm").strip(), sm.end()
             if hh < 24:
@@ -318,14 +360,14 @@ class Normalizer:
         # prefix currency: "$5", "€3,50", "$5 million"
         cur_sym = m.group("cur") if "cur" in m.re.groupindex else None
         if cur_sym:
-            scale = self._scale_re.match(text, end) if self._scale_re else None
+            scale = c.scale_re.match(text, end) if c.scale_re else None
             if scale:
                 cur = lex.currencies[cur_sym]
                 words = f"{self._words(intpart, frac, neg)} {scale.group('scale')} {cur.major.plural}"
                 return words, scale.end()
             return self._currency(cur_sym, intpart, frac, neg), end
 
-        sm = self._suffix_re.match(text, end)
+        sm = c.suffix_re.match(text, end)
         if sm:
             kind = sm.lastgroup
             if kind == "pct":
@@ -350,7 +392,7 @@ class Normalizer:
 
         # plain number; maybe a year
         if (frac is None and not neg and len(intpart) == 4 and 1100 <= int(intpart) <= 2099
-                and self._year_re and self._year_re.search(text[max(0, m.start() - 20):m.start()])):
+                and c.year_re and c.year_re.search(text[max(0, m.start() - 20):m.start()])):
             words = lang.year(int(intpart))
         else:
             words = self._words(intpart, frac, neg)

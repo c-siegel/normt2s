@@ -276,6 +276,12 @@ Normalizer(lang="en", lexicon=None, latex="speak")
 | `n.add_*`, `n.load_lexicon(path)` | extend the dictionaries (see above) |
 | `n.lexicon` | the underlying `Lexicon` with the LaTeX methods |
 
+### Threads
+
+One `Normalizer` can be shared by many threads (for example in a web server). Compiled state is
+built under a lock and swapped in as a single object, and edits to the lexicon are locked, so a
+thread never sees half-built patterns, even while another thread calls `add_abbreviation`.
+
 ## How it works
 
 Text is split into spans. Code, URLs, e-mails and HTML are kept as they are, math goes to the
