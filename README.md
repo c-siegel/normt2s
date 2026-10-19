@@ -1,15 +1,17 @@
 # normt2s
 
-**Make written text speakable.** `normt2s` turns numbers, units, abbreviations, dates and math into
-the words a text-to-speech engine should say, so `3.5 km/h` is not read as "three dot five k m
-slash h".
+[![PyPI](https://img.shields.io/pypi/v/normt2s)](https://pypi.org/project/normt2s/)
+[![Python](https://img.shields.io/pypi/pyversions/normt2s)](https://pypi.org/project/normt2s/)
+[![License: MIT](https://img.shields.io/pypi/l/normt2s)](LICENSE)
 
-- **English and German**
-- **No dependencies**, pure Python 3.9+, MIT licensed
-- **Fast**: about 110 µs for a typical sentence
-- **Streaming-ready**: works on LLM output as it arrives, token by token
-- **Easy to extend**: add words with one line of code or a small JSON file, or let users bring their own pronunciation rules
-- **LLM-ready**: optional Markdown stripping, bare LaTeX and chemical formulas
+**Make written text speakable.** `normt2s` turns numbers, units, abbreviations, dates, formulas and
+math into the words a text-to-speech engine should say, so `3.5 km/h` is not read as "three dot
+five k m slash h".
+
+- English and German, no dependencies, pure Python 3.9+
+- About 110 µs for a typical sentence
+- Built for LLM output: streaming token by token, optional Markdown stripping, your own control
+  tokens and user pronunciation rules
 
 ```python
 from normt2s import normalize
@@ -23,34 +25,20 @@ normalize("Der Zug fährt 120 km/h, z. B. um 14:30.", lang="de")
 
 ## Contents
 
-1. [Install](#install)
-2. [What gets converted](#what-gets-converted)
-3. [Adding your own words](#adding-your-own-words)
-4. [Markdown](#markdown)
-5. [Your own control tokens](#your-own-control-tokens)
-6. [Rule sets for pronunciations](#rule-sets-for-pronunciations)
-7. [Math (LaTeX)](#math-latex)
-8. [Streaming LLM output](#streaming-llm-output)
-9. [Reference: options and API](#reference-options-and-api)
-10. [How it works](#how-it-works)
-11. [Adding a language](#adding-a-language)
-12. [Performance](#performance)
-13. [Known limitations](#known-limitations)
-14. [Development](#development)
+[Install](#install) · [What gets converted](#what-gets-converted) ·
+[Adding your own words](#adding-your-own-words) · [Markdown](#markdown) ·
+[Control tokens](#your-own-control-tokens) · [Rule sets](#rule-sets-for-pronunciations) ·
+[Math](#math-latex) · [Streaming](#streaming-llm-output) · [API reference](#reference-options-and-api) ·
+[How it works](#how-it-works) · [Adding a language](#adding-a-language) ·
+[Performance](#performance) · [Limitations](#known-limitations) · [Development](#development)
 
 ## Install
-
-`normt2s` is available on [PyPI](https://pypi.org/project/normt2s/):
 
 ```
 pip install normt2s
 ```
 
-To work on the library itself, install from a clone of the repository instead:
-
-```
-pip install -e .
-```
+From a clone of the repository: `pip install -e .`
 
 ## What gets converted
 
@@ -62,8 +50,7 @@ Every row is real output from the library.
 |---|---|---|
 | Numbers | `1,234 points`, `1 000 points` | one thousand two hundred thirty-four points, one thousand points |
 | | `3.14`, `-5`, `007` | three point one four, minus five, zero zero seven |
-| | `1st`, `23rd` | first, twenty-third |
-| | `50%`, `1/2 cup` | fifty percent, one half cup |
+| | `1st`, `23rd`, `50%`, `1/2 cup` | first, twenty-third, fifty percent, one half cup |
 | Years | `in 1984`, `the 1990s` | in nineteen eighty-four, the nineteen nineties |
 | | `I have 1984 apples` | I have one thousand nine hundred eighty-four apples |
 | Time | `3:45 pm`, `at 14:30` | three forty-five p m, at fourteen thirty |
@@ -72,19 +59,17 @@ Every row is real output from the library.
 | Currency | `$3.50`, `€5`, `5 EUR`, `$2.5 million` | three dollars and fifty cents, five euros, five euros, two point five million dollars |
 | Abbreviations | `Dr. Smith, e.g. ...`, `etc.` | Doctor Smith, for example ..., et cetera |
 | Math symbols | `2 + 3 = 5`, `x²`, `a ≤ b` | two plus three equals five, x squared, a is less than or equal to b |
+| Operators | `3 * 4 * 5`, `2*(x+1)`, `3 / 4` | three times four times five, two times (x plus one), three divided by four |
 | Chemistry | `H2O`, `CO2`, `U-235` | H two O, C O two, U two hundred thirty-five |
 | Pauses | `The result — a success — was clear.` | The result, a success, was clear. |
-| Operators | `3 * 4 * 5`, `2*(x+1)`, `3 / 4` | three times four times five, two times (x plus one), three divided by four |
 
 ### German
 
 | Category | Input | Spoken |
 |---|---|---|
-| Numbers | `1.234,5` | eintausendzweihundertvierunddreißig Komma fünf |
-| | `1/3`, `3/4` | ein drittel, drei viertel |
+| Numbers | `1.234,5`, `1/3`, `3/4` | eintausendzweihundertvierunddreißig Komma fünf, ein drittel, drei viertel |
 | Ordinals | `der 3. Platz`, `im 21. Jahrhundert`, `Kapitel 3. Danach` | der dritte Platz, im einundzwanzigsten Jahrhundert, Kapitel drei. Danach |
-| Dates | `15.03.2024` | fünfzehnter März zweitausendvierundzwanzig |
-| | `am 15.03.2024` | am fünfzehnten März zweitausendvierundzwanzig |
+| Dates | `15.03.2024`, `am 15.03.2024` | fünfzehnter März zweitausendvierundzwanzig, am fünfzehnten März zweitausendvierundzwanzig |
 | | `am 3. Mai`, `im Mai 2024` | am dritten Mai, im Mai zweitausendvierundzwanzig |
 | Time | `um 14:30`, `um 14:30 Uhr` | um vierzehn Uhr dreißig |
 | Units | `1 kg`, `1 min`, `21 min` | ein Kilogramm, eine Minute, einundzwanzig Minuten |
@@ -92,54 +77,30 @@ Every row is real output from the library.
 | Currency | `3,50 €`, `5 €` | drei Euro fünfzig Cent, fünf Euro |
 | Abbreviations | `z. B.`, `ca. 5 Mio.` | zum Beispiel, circa fünf Millionen |
 
-German dates take the right case ending from the word before them: `am` / `vom` / `zum` / `dem`
-/ `den` give *fünfzehnten*, `der` gives *fünfzehnte*, and a date on its own gives *fünfzehnter*.
+German dates take their case ending from the word before: `am` / `vom` / `zum` / `dem` / `den` give
+*fünfzehnten*, `der` gives *fünfzehnte*, a date on its own gives *fünfzehnter*.
 
-### Symbols and operators
+### Details
 
-`add_symbol` accepts any single character or character sequence without whitespace (an empty or
-whitespace key raises `ValueError`): `n.add_symbol("@", "at")` reads `5 @ 3` as "five at three".
-
-`*` and `/` are ambiguous in prose, so they have their own built-in `operators` table and are only
-read between operands: `3 * 4 * 5`, `3*4*5` and `2*(x+1)` use "times"; `3 / 4` (spaces required)
-uses "divided by". `1/2` stays a fraction, and `a * b`, `*word*`, `**bold**` and `and/or` are not
-touched. In a lexicon file, use an `"operators": {"*": "times", "/": "divided by"}` table.
-
-### Spelled tokens
-
-A TTS engine reads `CO2` as one made-up word, so a list of chemical formulas is spelled out:
-letters as themselves, digit runs as numbers (`H2O` is "H two O", `C6H12O6` is "C six H twelve
-O six"). `CO_2` matches too. Built in: `CO2 H2O O2 O3 N2 H2 CH4 NH3 NaCl H2SO4 HCl NaOH CaCO3 SO2 NO2
-C6H12O6`. Add more with `n.add_spelled("ATP5")` or a `"spelled": [...]` list in a lexicon file.
-Matching is whole-token: `ECO2000` and `CO23` are left alone.
-
-Isotopes written `U-235` (an element symbol, hyphen, one to three digits) are read without the
-hyphen: "U two hundred thirty-five". `A-4` (not an element) is not touched by this rule.
-
-### Pauses
-
-Many TTS engines read an em dash (`—`) as "minus". By default it becomes a comma pause, and between
-two digits it is a range like the en dash: `10—20` is "ten to twenty". A dash at the start or end of
-a line is dropped, and no doubled commas are produced. Change or extend it with
-`n.add_punctuation("…", " dot dot dot ")` or a `"punctuation"` table in a lexicon file.
-
-### What is left alone
-
-Code (`` `inline` `` and fenced blocks), URLs, e-mail addresses, HTML tags and Markdown link
-targets are never changed:
-
-```python
-normalize("Run `pip install numpy==1.26` and open https://example.com/v1.2/page")
-# unchanged
-```
-
-Things that only look like numbers are kept too: versions with several dots are read digit by
-digit (`3.2.1` is "three point two point one"), and letters glued to digits (`mp3`, `ECO2000`) are
-not split. Listed formulas such as `H2O` are the exception, see *Spelled tokens*.
+- **Symbols:** `add_symbol` accepts any character or sequence without whitespace
+  (`n.add_symbol("@", "at")`); an empty or blank key raises `ValueError`.
+- **`*` and `/`** are ambiguous in prose, so they live in an `operators` table and are only read
+  between operands: `3 * 4`, `3*4` and `2*(x+1)` use "times"; `3 / 4` (spaces required) uses "divided
+  by". `1/2` stays a fraction; `a * b`, `*word*` and `and/or` are untouched.
+- **Spelled tokens:** `CO2` would be read as one made-up word, so listed formulas are spelled out
+  (letters as themselves, digit runs as numbers; `CO_2` matches too). Built in: `CO2 H2O O2 O3 N2 H2
+  CH4 NH3 NaCl H2SO4 HCl NaOH CaCO3 SO2 NO2 C6H12O6`. Add more with `n.add_spelled("ATP5")`. Matching
+  is whole-token: `ECO2000` and `CO23` are left alone. Isotopes (`U-235`: element symbol, hyphen,
+  1–3 digits) lose the hyphen; `A-4` is not an element and stays.
+- **Pauses:** an em dash becomes a comma pause, and between digits a range (`10—20` is "ten to
+  twenty"). A dash at a line edge is dropped. Change it with `n.add_punctuation(char, replacement)`.
+- **Left alone:** code (inline and fenced), URLs, e-mail addresses, HTML tags and Markdown link
+  targets. So are things that only look like numbers: `3.2.1` is read digit by digit and `mp3` is
+  not split.
 
 ## Adding your own words
 
-There is one rule to remember: **create a `Normalizer`, add words to it, and use that instance.**
+**Create a `Normalizer`, add words to it, and use that instance.**
 
 ```python
 from normt2s import Normalizer, normalize
@@ -156,55 +117,46 @@ n.normalize("LOLA sails 12 kn with 2 ch for 5.20 CHF")
 normalize("LOLA sails 12 kn", n)       # the helper also accepts your instance
 ```
 
-> **Gotcha:** `normalize(text, "en")` uses a separate, shared instance. Words you add to your own
-> `Normalizer("en")` are **not** visible there. Pass your instance (`normalize(text, n)`), or edit
-> the shared one with `get_normalizer("en")`.
+> **Gotcha:** `normalize(text, "en")` uses a separate, shared instance. Words added to your own
+> `Normalizer("en")` are not visible there. Pass your instance, or edit the shared one with
+> `get_normalizer("en")`.
 
-Your entries override the built-in ones, and changes apply immediately, even to an instance you
-have already used.
-
-### Which method for what
+Your entries override the built-in ones and apply immediately, even to an instance you have already
+used.
 
 | You want to change | Method | Example |
 |---|---|---|
 | An abbreviation | `add_abbreviation(key, to)` | `("tbh", "to be honest")` |
 | A unit after a number | `add_unit(symbol, singular, plural, gender)` | `("kn", "knot")` |
 | A currency | `add_currency(symbol, major, minor)` | see above |
-| A math symbol such as `=` or `×`, or any other character or sequence | `add_symbol(key, word)` | `("=", "is")`, `("@", "at")`, `("!=", "is not")` |
+| A symbol (any character or sequence) | `add_symbol(key, word)` | `("=", "is")`, `("!=", "is not")` |
 | `*` or ` / ` between operands | `lexicon.add_operator(key, word)` | `("*", "times")` |
-| A LaTeX command | `lexicon.add_latex_command(name, spoken)` | `("R", "the reals")` |
-| A LaTeX function | `lexicon.add_latex_function(name, spoken)` | `("sinc", "sinc")` |
-| A LaTeX sentence template | `lexicon.add_phrase(key, template)` | `("frac", "{a} divided by {b}")` |
-| Text that must stay as it is, or be dropped from speech | `add_protected(pattern, spoken=None, opener=None)` | `(r"::[a-z_]+::")` |
-| A token spelled out letter by letter | `add_spelled(token)` | `("ATP5")` |
+| A token spelled letter by letter | `add_spelled(token)` | `("ATP5")` |
 | A character read as a pause | `add_punctuation(char, replacement)` | `("—", ", ")` |
+| Text to keep or drop | `add_protected(pattern, spoken=None, opener=None)` | `(r"::[a-z_]+::")` |
+| A LaTeX command / function / template | `lexicon.add_latex_command(name, spoken)`, `add_latex_function`, `add_phrase` | `("R", "the reals")` |
 | Remove an entry | `lexicon.remove(kind, key)` | `("abbreviations", "vs.")` |
 
-Notes on abbreviations:
-
-- Matching is case sensitive, but for lowercase keys a capitalised variant is added for you
-  (`e.g.` also gives `E.g.` → "For example"). Pass `capitalized=False` to turn that off.
-- Spaces inside a key are optional when matching: `z. B.` also matches `z.B.`
-- Set `final=True` for abbreviations that can end a sentence (`etc.`), so the full stop is kept
-  when a new sentence follows.
+Abbreviations: matching is case sensitive, but a capitalised variant is added for lowercase keys
+(`e.g.` also gives `E.g.`; `capitalized=False` turns that off). Spaces inside a key are optional
+(`z. B.` matches `z.B.`). Use `final=True` for abbreviations that can end a sentence (`etc.`), so the
+full stop is kept before a new sentence.
 
 ### Using a file
 
-Put your words in a JSON (or, on Python 3.11+, TOML) file and load it:
-
-```python
-n.load_lexicon("my_terms.json")
-```
+`n.load_lexicon("my_terms.json")` (or `.toml` on Python 3.11+) with the same format as the built-in
+data in [en.json](src/normt2s/data/en.json) and [de.json](src/normt2s/data/de.json):
 
 ```json
 {
-  "abbreviations": {
-    "LMS": "learning management system",
-    "etc.": {"to": "et cetera", "final": true}
-  },
+  "abbreviations": {"LMS": "learning management system", "etc.": {"to": "et cetera", "final": true}},
   "units": {"kn": ["knot"], "ch": ["child", "children"]},
   "currencies": {"CHF": {"major": ["franc", "francs"], "minor": ["rappen", "rappen"]}},
   "symbols": {"=": "equals"},
+  "operators": {"*": "times", "/": "divided by"},
+  "spelled": ["ATP5"],
+  "punctuation": {"—": ", "},
+  "protected": [{"pattern": "\\[\\d+\\]", "spoken": ""}, "::[a-z_]+::"],
   "latex": {
     "commands": {"R": "the reals"},
     "functions": {"sinc": "sinc"},
@@ -213,13 +165,12 @@ n.load_lexicon("my_terms.json")
 }
 ```
 
-The built-in data uses exactly this format: see [src/normt2s/data/en.json](src/normt2s/data/en.json)
-and [de.json](src/normt2s/data/de.json). A unit entry is `[singular, plural, gender]`, where the
-plural and gender are optional and the gender (`"m"`, `"f"`, `"n"`) only matters in German.
+A unit entry is `[singular, plural, gender]`; plural and gender are optional, and the gender
+(`"m"`, `"f"`, `"n"`) only matters in German.
 
 ## Markdown
 
-LLM replies are usually Markdown, and read aloud `**`, `#` or `[text](url)` are noise. Opt in with
+LLM replies are Markdown, and read aloud `**`, `#` or `[text](url)` are noise. Opt in with
 `markdown="strip"`:
 
 ```python
@@ -235,23 +186,20 @@ n.normalize("## Plan\n- **Walk** 3*4 km, see [the map](https://example.com/a_b)"
 | Lists | `- item`, `* item`, `+ item`, `1. item`, `1) item` | `item` |
 | Rule | `---`, `***`, `___`, `* * *` (own line) | empty line |
 | Link, image | `[text](url)`, `![alt](url)` | `text`, `alt` |
-| Inline code | `` `x = 1` `` | `x = 1`, kept verbatim |
-| Fenced code | ```` ```python\ncode\n``` ```` | `code`, kept verbatim, the language label is dropped |
+| Inline / fenced code | `` `x = 1` ``, ```` ```python\ncode\n``` ```` | the code, verbatim; the language label is dropped |
 
-Code, URLs, e-mail addresses, HTML and math are masked before the markers are removed, so
-`snake_case_name`, `` `a*b*c` `` and `$a_1 * b_1$` are safe, and `3*4*5` is not mistaken for
-emphasis. In a stream, an unclosed `**`, `__`, `~~`, `*x`, `_x` or `[text](` is held back until
-it is closed or the line ends, and a cut never falls inside a complete emphasis or link.
+Code, URLs, e-mail, HTML and math are masked first, so `snake_case_name`, `` `a*b*c` `` and
+`$a_1 * b_1$` are safe and `3*4*5` is not taken for emphasis. In a stream, an unclosed `**`, `__`,
+`~~`, `*x`, `_x` or `[text](` is held back until it closes or the line ends.
 
-Not handled: tables, footnotes and reference-style links (`[text][ref]`). A line starting with a
-number and a dot (`3. Mai war schön`) is a list item in Markdown and loses the number.
+Not handled: tables, footnotes, reference-style links. A line starting with a number and a dot
+(`3. Mai war schön`) is a list item in Markdown and loses the number.
 
 ## Your own control tokens
 
-Applications put their own markers into LLM output: stage directions (`[laughs]`), gesture or
-emotion tags (`::wave::`, `<emotion:happy>`), citation numbers (`[1]`). They must not be
-normalized, must not be cut in half by the stream, and are often meant to be removed from speech
-but kept for display:
+Applications put their own markers into LLM output: `[laughs]`, `::wave::`, `<emotion:happy>`,
+citation numbers `[1]`. They must not be normalized or cut in half by a stream, and are often meant
+to be dropped from speech but kept for display:
 
 ```python
 n.add_protected(r"::[a-z_]+::")              # kept verbatim in the spoken text
@@ -261,24 +209,22 @@ n.normalize("Hi ::wave:: it is 5 km [1] away.")
 # 'Hi ::wave:: it is five kilometers away.'
 ```
 
-- `spoken=None` (default) keeps a match as it is, `spoken=""` removes it (and the doubled space
-  it would leave), any other string replaces it.
+- `spoken=None` keeps a match, `""` removes it (and the doubled space it leaves), any other string
+  replaces it.
 - A protected match separates a number from its unit like any other protected span:
   `5 ::wave:: kg` is "five ::wave:: kg".
-- The pattern is a regular expression written by *you*, the developer; it must compile, must not
-  match the empty string and must not have capturing groups (write `(?:...)`). Invalid patterns
-  raise `ValueError`.
-- A stream never cuts inside a match. For a match that has started but is not complete yet
-  (`::wav`), it uses the pattern's literal start (`::`), taken from the pattern when possible. Pass
-  `opener="..."` otherwise, or `opener=""` when matches can never contain a sentence end.
-- In a lexicon file: `"protected": [{"pattern": "\\[\\d+\\]", "spoken": ""}, "::[a-z_]+::"]`.
+- The pattern is a regular expression written by *you*: it must compile, not match the empty string
+  and have no capturing groups (use `(?:...)`), else `ValueError`.
+- A stream never cuts inside a match. For a match that has started but is not complete (`::wav`) it
+  uses the pattern's literal start (`::`), taken from the pattern when possible. Otherwise pass
+  `opener="..."`, or `opener=""` if matches can never contain a sentence end.
 
 ## Rule sets for pronunciations
 
-Applications often let users fix pronunciations: `pH` should be "p H", `{number} kg` should be
-"{number} kilograms". Replacing before the normalizer breaks grammar (German `1 Kilogramm` would be
-"eins Kilogramm"), and replacing after it misses because numbers are already words. A `RuleSet`
-runs inside the pipeline instead:
+Applications let users fix pronunciations: `pH` should be "p H", `{number} kg` should be "{number}
+kilograms". Replacing before the normalizer breaks grammar (German `1 Kilogramm` would be "eins
+Kilogramm"); replacing after it misses because numbers are already words. A `RuleSet` runs inside
+the pipeline:
 
 ```python
 from normt2s import Normalizer, Rule, RuleSet
@@ -297,38 +243,28 @@ n.normalize("pH 7", rules=rules, applied=applied)  # applied == [Rule("pH", "p H
 ```
 
 `Rule(term, spoken, whole_word=True, case_sensitive=False, gender=None, plural=None)` is a frozen
-dataclass. A `RuleSet` is immutable and hashable by content, so you can cache one per user with
-`functools.lru_cache`. One shared `Normalizer` per language serves any number of rule sets, and a
-rule set never changes the lexicon. `n.stream(rules=...)` and `n.normalize_stream(chunks,
-rules=...)` take it too, and `normalize(text, "en", rules)` as well.
-
-Load rules from data:
-
-```python
-RuleSet.from_dicts([{"term": "pH", "spoken": "p H", "case_sensitive": True}])
-RuleSet.load("rules.json")      # {"rules": [ ...same dictionaries... ]}
-```
-
-`from_dicts` also accepts the camelCase keys `caseSensitive` and `wholeWord`, which JavaScript
-front ends usually send.
+dataclass. A `RuleSet` is immutable and hashable by content, so cache one per user with
+`functools.lru_cache`; one shared `Normalizer` per language serves any number of rule sets and is
+never changed by them. `stream(rules=...)`, `normalize_stream(chunks, rules=...)` and
+`normalize(text, "en", rules)` take rules too. Load them with
+`RuleSet.from_dicts([{"term": ..., "spoken": ...}])` or `RuleSet.load("rules.json")`
+(`{"rules": [...]}`); camelCase keys (`caseSensitive`, `wholeWord`) are accepted.
 
 How terms match:
 
-- A term is **literal text**, no regular expressions. A space matches any run of whitespace, so
-  `e. g.` also matches across a line break.
-- `{number}` matches `5`, `1,5`, `3.000,25` or `1,234.5` (a leading minus is included) and may be
-  used several times; `{number}` in `spoken` is replaced in order by the number in words.
-- `whole_word=True` keeps a rule from matching inside a word: `N` does not match in `Newton`, but
-  `kg` matches in `10kg`. Terms that start or end with a symbol (`°C`, `≈`) need no guard.
-- The longest term wins, then plain terms before templates, then case-sensitive before
-  case-insensitive. Text is scanned once from left to right and a replacement is never matched
-  again. A replacement that would touch a neighbouring letter or digit is padded with a space
-  (`Δt` is "Delta t").
-- After `{number}`, the spoken word is looked up among the units: its gender is used for the
-  number (German `1 kg` is "ein Kilogramm") and singular or plural is chosen from the value
-  (`21 min` becomes "einundzwanzig Minuten"). `gender=` and `plural=` override this.
-- Empty terms are ignored. Terms longer than 200 characters and sets of more than 2,000 rules
-  raise `ValueError`.
+- A term is **literal text**, never a regex. A space matches any run of whitespace (`e. g.` also
+  matches across a line break).
+- `{number}` matches `5`, `1,5`, `3.000,25` or `1,234.5` (with a leading minus), may appear several
+  times, and is replaced in `spoken` by the number in words, in order.
+- `whole_word=True` stops a rule matching inside a word: `N` does not match in `Newton`, but `kg`
+  matches in `10kg`. Terms starting or ending with a symbol (`°C`) need no guard.
+- The longest term wins, then plain before template, then case-sensitive before case-insensitive.
+  Text is scanned once from left to right and a replacement is never matched again. A replacement
+  touching a letter or digit is padded with a space (`Δt` is "Delta t").
+- The word after `{number}` is looked up among the units: its gender is used for the number (`1 kg`
+  is "ein Kilogramm") and singular or plural follows the value (`21 min` is "einundzwanzig Minuten").
+  `gender=` and `plural=` override this.
+- Empty terms are ignored. Terms over 200 characters or more than 2,000 rules raise `ValueError`.
 
 ## Math (LaTeX)
 
@@ -345,35 +281,28 @@ normalize(r"Es gilt $x \in \mathbb{R}$ und $\sum_{i=1}^{n} i$.", lang="de")
 # 'Es gilt x ist Element von den reellen Zahlen und die Summe von i gleich eins bis n über i.'
 ```
 
-Supported: fractions, roots, powers and subscripts, sums, products, integrals and limits, Greek
-letters, relations and set notation, functions such as `\sin` and `\log`, absolute values and
-norms, accents (`\vec`, `\hat`), `\binom`, factorials, primes, matrices, `cases`, and `\text{}` /
-`\mathrm{}`. Units after a number work too: `5\,\mathrm{km}` is "five kilometers".
+Supported: fractions, roots, powers and subscripts, sums, products, integrals, limits, Greek
+letters, relations and set notation, functions (`\sin`, `\log`), absolute values, norms, accents,
+`\binom`, factorials, primes, matrices, `cases`, `\text{}` / `\mathrm{}`. Units after a number work:
+`5\,\mathrm{km}` is "five kilometers".
 
-Good to know:
-
-- **Parentheses** are only spoken where they change the meaning: `(a+b)^2` and `2(x+1)` get
-  "open paren ... close paren", `y = (x+1)` does not.
-- **Complex arguments** are fenced so the listener can follow them: "the square root of x plus
-  one, end root".
-- **Malformed LaTeX** never raises. It is left exactly as it was written.
-- **Dollar signs:** a single `$` only starts math under the pandoc rule, so
-  `from $5 to $6` stays currency.
-- **Bare LaTeX** (without `$...$`) such as `\frac{1}{2}` or `a \cdot b` is protected by default:
-  its numbers are not rewritten (before, `\frac{1}{2}` became `\frac{one}{two}`). Use
-  `Normalizer("en", latex_bare="speak")` to read it like delimited math. A run starts at a known
-  command and stops before a word, a sentence mark or a newline; unknown commands
-  (`C:\Users\name`) and unbalanced braces are left as they are.
-- **Turn it off** with `Normalizer("en", latex="keep")` to leave all math untouched.
-- **Commands vs. functions:** `add_latex_command` is for symbol-like names (`\cdot`, `\R`),
-  `add_latex_function` for names applied to an argument (`\sinc x`). Commands win when both exist,
-  and `add_latex_function` warns if a command with that name already exists.
+- **Parentheses** are only spoken where they change the meaning: `(a+b)^2` and `2(x+1)` get "open
+  paren ... close paren", `y = (x+1)` does not. Complex arguments are fenced ("the square root of x
+  plus one, end root").
+- **Malformed LaTeX** never raises and is left as written. A single `$` only starts math under the
+  pandoc rule, so `from $5 to $6` stays currency.
+- **Bare LaTeX** (no `$...$`) such as `\frac{1}{2}` or `a \cdot b` is protected by default, so its
+  numbers are not rewritten. `Normalizer("en", latex_bare="speak")` reads it like delimited math. A
+  run starts at a known command and stops before a word, a sentence mark or a newline; unknown
+  commands (`C:\Users\name`) and unbalanced braces are left alone.
+- `Normalizer("en", latex="keep")` leaves all math untouched.
+- `add_latex_command` is for symbol-like names (`\cdot`), `add_latex_function` for names applied to
+  an argument (`\sinc x`). Commands win when both exist; `add_latex_function` warns then.
 
 ## Streaming LLM output
 
-When the LLM answers token by token, you do not want to wait for the full answer, and you cannot
-normalize each token alone (`"1"`, `"20"`, `" km"` would be read separately). The stream wrapper
-buffers text and releases it only when it is safe:
+You cannot normalize LLM tokens one by one (`"1"`, `"20"`, `" km"` would be read separately). The
+stream wrapper buffers text and releases it only when that is safe:
 
 ```python
 stream = n.stream()
@@ -382,16 +311,10 @@ for token in llm_tokens:
     if speakable:
         tts.say(speakable)
 tts.say(stream.flush())                # call once at the end
-```
 
-or, as a generator:
-
-```python
-for speakable in n.normalize_stream(llm_tokens):
+for speakable in n.normalize_stream(llm_tokens):   # or as a generator
     tts.say(speakable)
 ```
-
-What that looks like:
 
 ```
 feed 'The train '   -> ''
@@ -405,58 +328,37 @@ feed '. Done'       -> ''
 flush               -> 'Doctor Smith pays three dollars and fifty cents now. Done'
 ```
 
-Text is released at the end of a sentence or at a newline. It is never cut inside a number and its
-unit, an abbreviation (`Dr. Smith`), a date (`am 3. Mai`), a code block or a math span. The
-combined output is identical to normalizing the whole text at once, whatever the chunk sizes (this
-is tested). If a long run has no boundary, it is flushed after `max_buffer` characters (default
-400) at a whitespace that does not follow a number.
+Text is released at the end of a sentence or at a newline, never inside a number and its unit, an
+abbreviation, a date, a code block, a math span or a protected token. The joined output is identical
+to normalizing the whole text at once, whatever the chunking (tested). A long run without a boundary
+is flushed after `max_buffer` characters (default 400) at a whitespace that does not follow a number
+or a word that binds one (`in 1984`, `am 15.03.`). The trade-off: speech starts at the end of the
+first sentence, not at the first token.
 
-The trade-off: speech starts at the end of the first sentence, not at the first token.
-
-### Chunk sizes
-
-A voice UI wants the first audio early and later chunks long enough to sound natural and to save
-TTS requests:
+**Chunk sizes.** For a voice UI that wants early audio and longer chunks later:
 
 ```python
 stream = n.stream(first_min_chars=25, min_chars=80, max_buffer=300)
 ```
 
-- Before anything has been released, the **first** boundary at least `first_min_chars` long is
-  used, so the first chunk is short.
-- After that, text is released at the **last** boundary, but only once that is at least
-  `min_chars` long; otherwise the stream waits.
-- `max_buffer` is the fallback for a long run without a boundary, as before. It never cuts right
-  after a word that gives the next number its meaning (`in 1984`, German `am 15.03.`).
-- `flush()` releases everything, however short.
-- The defaults (`0`, `0`) keep the old behaviour. Whatever the three values, the joined output
-  is identical to normalizing the whole text at once (tested with random texts and chunkings).
+The first chunk ends at the first boundary at least `first_min_chars` long; later chunks end at the
+last boundary, once it is at least `min_chars` long (otherwise the stream waits). `flush()` releases
+everything. The defaults (`0`, `0`) release up to the last boundary as soon as possible. A large token
+can release several chunks at once; `feed()` returns them joined.
 
-A single large token can release several chunks at once (a short first one, then the rest);
-`feed()` returns them joined, `feed_pieces()` (below) keeps them apart.
-
-### Showing the text while speaking it
-
-A chat UI shows the original text (Markdown, formulas) and speaks the normalized text, and both
-must stay in step. `feed_pieces()` returns `Piece(raw, spoken)` tuples:
+**Raw and spoken together.** A chat UI shows the original text and speaks the normalized text.
+`feed_pieces()` returns `Piece(raw, spoken)` tuples:
 
 ```python
-from normt2s import Piece          # NamedTuple(raw: str, spoken: str)
-
 for piece in stream.feed_pieces(token):   # a list: zero or more pieces
     show(piece.raw)
     speak(piece.spoken)
 last = stream.flush_piece()               # Piece, or None if nothing was buffered
-if last:
-    show(last.raw)
-    speak(last.spoken)
 ```
 
-`"".join(p.raw ...)` is exactly the input and `"".join(p.spoken ...)` is exactly
-`normalize(input)`, whatever the chunking (tested). A piece whose `spoken` is empty, for example
-one that was only Markdown markers, is still returned so that `raw` is never lost.
-`feed()` and `flush()` stay and return the `spoken` parts joined; `normalize_stream` yields one
-`spoken` string per piece.
+The `raw` parts join to exactly the input and the `spoken` parts to exactly `normalize(input)`. A
+piece with empty `spoken` (only Markdown markers, a dropped `[1]`) is still returned, so `raw` is
+never lost. `normalize_stream` yields one `spoken` string per piece.
 
 ## Reference: options and API
 
@@ -470,64 +372,58 @@ Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect", markdow
 | `lexicon` | a `Lexicon` to use instead of the built-in data |
 | `latex` | `"speak"` (default) reads math aloud, `"keep"` leaves it untouched |
 | `latex_bare` | LaTeX outside math delimiters: `"protect"` (default) keeps it, `"speak"` reads it |
-| `markdown` | `"keep"` (default) or `"strip"` to remove Markdown markers before normalizing |
+| `markdown` | `"keep"` (default) or `"strip"` |
 
 | Call | What it does |
 |---|---|
-| `normalize(text, lang="en")` | one-shot helper; `lang` may be a code or your own `Normalizer` |
+| `normalize(text, lang="en", rules=None)` | one-shot helper; `lang` is a code or your own `Normalizer` |
 | `get_normalizer(lang)` | the shared instance behind `normalize(text, "en")` |
-| `n.normalize(text, rules=None, applied=None)` (or `n(text)`) | normalize a string, optionally with a `RuleSet` |
-| `n.stream(max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | a `StreamNormalizer` with `feed()` and `flush()` |
-| `stream.feed_pieces(chunk)`, `stream.flush_piece()` | `Piece(raw, spoken)` objects, see *Showing the text while speaking it* |
-| `n.normalize_stream(chunks, max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | generator over speakable pieces |
-| `Rule(...)`, `RuleSet(rules)`, `RuleSet.from_dicts(...)`, `RuleSet.load(path)` | user pronunciation rules (see above) |
-| `n.add_*`, `n.load_lexicon(path)` | extend the dictionaries (see above) |
-| `n.lexicon` | the underlying `Lexicon` with the LaTeX methods |
+| `n.normalize(text, rules=None, applied=None)` (or `n(text)`) | normalize a string |
+| `n.stream(max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | a `StreamNormalizer`: `feed()`, `flush()`, `feed_pieces()`, `flush_piece()` |
+| `n.normalize_stream(chunks, max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | generator of spoken chunks |
+| `Rule`, `RuleSet`, `Piece` | rules and stream pieces (see above) |
+| `n.add_*`, `n.load_lexicon(path)`, `n.lexicon` | extend the dictionaries (see above) |
 
-### Threads
-
-One `Normalizer` can be shared by many threads (for example in a web server). Compiled state is
-built under a lock and swapped in as a single object, and edits to the lexicon are locked, so a
-thread never sees half-built patterns, even while another thread calls `add_abbreviation`.
+One `Normalizer` can be shared by many threads: compiled state is built under a lock and swapped in
+as one object, and lexicon edits are locked, so no thread sees half-built patterns.
 
 ## How it works
 
-Text is split into spans. Code, URLs, e-mails and HTML are kept as they are, math goes to the
-LaTeX speaker, and everything else runs through these steps:
+Text is split into spans. Code, URLs, e-mails, HTML and protected tokens are kept, math goes to the
+LaTeX speaker, and the rest runs through these steps:
 
 0. **Rule sets**, if given (their output is parked and restored at the end)
-1. **Abbreviations** (`Dr.` → "Doctor")
-2. **Dates** (`15.03.2024`, `March 3rd`)
-3. **Symbols that need digits** (`5 - 3`, `x^2`)
-4. **Numbers**, together with what follows them: units, percent, currency, ordinals, am/pm
-5. **Remaining symbols** (`=`, `+`, `²`, `≤`)
+1. **Spelled tokens and abbreviations** (`H2O`, `Dr.` → "Doctor")
+2. **Dates** and German ordinals (`15.03.2024`, `March 3rd`, `der 3. Platz`)
+3. **Symbols that need digits** (`5 - 3`, `x^2`, `3 * 4`)
+4. **Numbers**, with what follows: units, percent, currency, ordinals, am/pm
+5. **Pauses and remaining symbols** (`—`, `=`, `+`, `²`, `≤`)
 
-All regular expressions are compiled once and rebuilt only when the dictionaries change.
+Regexes are compiled once and rebuilt only when the dictionaries change.
 
 ```
 src/normt2s/
-  __init__.py      public API: normalize, get_normalizer
   normalizer.py    the pipeline above (start reading here)
   lexicon.py       the editable dictionaries and how they are loaded
-  rules.py         user rule sets (Rule, RuleSet)
-  stream.py        buffering for streamed text
+  rules.py         Rule, RuleSet
+  stream.py        buffering for streamed text, Piece
   markdown.py      Markdown marker stripping
-  latex.py         LaTeX tokenizer, parser and speaker
+  latex.py         LaTeX tokenizer, parser, speaker, bare-LaTeX detection
   langs/           per-language rules: number words, times, dates, fractions
-  data/            en.json, de.json: abbreviations, units, currencies, symbols, math vocabulary
-tests/             examples of every rule, a good way to see expected behaviour
+  data/            en.json, de.json, elements.json: word lists and vocabulary
+tests/             examples of every rule; tests/golden/ lists typical inputs and outputs
 benchmarks/        bench.py
 ```
 
-Rules that need code (how to build "twenty-one") live in `langs/`. Everything that is just a word
-list lives in `data/`.
+Rules that need code (how to build "twenty-one") live in `langs/`; word lists live in `data/`.
 
 ## Adding a language
 
 1. Create `src/normt2s/langs/xx.py` with a subclass of `Language`: set the separators and words
    (`thousands_sep`, `decimal_sep`, `minus`, `point`, `percent`, ...) and implement `cardinal`,
-   `ordinal`, `time` and `fraction`. Optionally add `year`, `decade`, `date_regex` and
-   `format_date`. End the file with `register(YourLanguage())`.
+   `ordinal`, `time` and `fraction`. Optionally add `year`, `decade`, `date_regex`/`format_date`,
+   `ordinal_dot_regex`/`format_ordinal_dot`, `time_word`. End the file with
+   `register(YourLanguage())`.
 2. Import it in `langs/__init__.py`.
 3. Create `src/normt2s/data/xx.json` in the format shown above.
 
@@ -535,37 +431,33 @@ list lives in `data/`.
 
 ## Performance
 
-`python benchmarks/bench.py` on a laptop:
+`python benchmarks/bench.py` on a laptop (timings vary by about ±20% between runs):
 
 | Input | Time |
 |---|---|
 | a typical sentence (74 characters) | about 110 µs |
 | a 600-character paragraph | about 0.9 ms |
-| a 700-character Markdown paragraph (`markdown="strip"`) | about 0.8 ms |
+| a 700-character Markdown paragraph | about 0.8 ms |
 | the sentence with a 200-rule `RuleSet` | about 140 µs |
 | streaming 1,000 one-character chunks | about 15 ms |
-| one-time startup (building and compiling) | about 30 ms |
+| one-time startup | about 30 ms |
 
 ## Known limitations
 
-- **Acronyms** such as "AI" or "LLM" are not expanded by default. Add the ones you need with
-  `add_abbreviation`.
-- **Multiplication and division:** `*` and ` / ` are only read between a digit, `)` or `]` and
-  a digit, `(` or `[` (`a * b` is left alone).
-- **Subtraction:** `-` is only read as "minus" between two numbers with spaces around it
-  (`5 - 3`). In `x - 1` it is left as it is. In LaTeX math it is always read.
-- **German ordinal dots** are recognised in dates (`am 3. Mai`) and after an article or contraction
-  before a capitalised word (`der 3. Platz`, `im 21. Jahrhundert`). Anywhere else (`Platz 3. Der
-  Rest`) a number with a dot is a cardinal. The ending follows the article (`der`/`die`/`das`:
-  *dritte*, otherwise *dritten*), which is wrong for a feminine genitive or dative (`der 3. Klasse`).
-- **German number + noun:** the gender of a number is only known for nouns that are units in the
-  lexicon (`1 Stunde` is "eine Stunde", `1 Kilogramm` is "ein Kilogramm"). Other nouns stay
-  `1 Haus` -> "eins Haus"; add the noun with `add_unit` to teach it.
-- **Dates:** English `3/15/2024` and `15 March 2024` are not handled, and neither are German
-  two-digit years.
+- **Acronyms** such as "AI" or "LLM" are not expanded; add them with `add_abbreviation`.
+- **`*` and ` / `** are only read between a digit, `)` or `]` and a digit, `(` or `[`.
+- **Subtraction:** `-` is only read as "minus" between two numbers with spaces (`5 - 3`), not in
+  `x - 1`. In LaTeX math it is always read.
+- **German ordinal dots** are recognised in dates and after an article or contraction before a
+  capitalised word. The ending follows the article (`der`/`die`/`das` → *dritte*, else *dritten*),
+  which is wrong for a feminine genitive or dative (`der 3. Klasse`).
+- **German number + noun:** the gender is only known for nouns that are units in the lexicon
+  (`1 Stunde`, `1 Kilogramm`); `1 Haus` stays "eins Haus". Teach nouns with `add_unit`.
+- **Dates:** English `3/15/2024` and `15 March 2024`, and German two-digit years, are not handled.
 - **Durations** such as `1:30:15` are not recognised.
-- **Single capital-letter units** (`V`, `W`, `L`) only match when attached to the number (`12V`),
-  so that "5 A grade" is not read as five amperes.
+- **Thousands:** a space between groups of three digits is a separator, so `3 100` is one number.
+- **Single capital-letter units** (`V`, `W`, `L`) only match attached to the number (`12V`), so "5 A
+  grade" is not five amperes.
 - **LaTeX:** a lone `|` reads as "such that", so `P(A|B)` is not "given". Layout commands such as
   `\overset` and `\underbrace` are not interpreted.
 
@@ -578,13 +470,9 @@ python benchmarks/bench.py
 ```
 
 Before 1.0, a minor release may change spoken output and a patch release never does, so pin
-`normt2s>=0.4,<0.5`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
-files in `tests/golden/` list typical inputs and their output per language.
-The hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`, `$`, `\`,
-`` ` ``, `[` and `::`.
-
-The tests double as documentation: `tests/test_en.py` and `tests/test_de.py` list the expected
-output for each rule.
+`normt2s>=0.4,<0.5`. Every output change is listed in [CHANGELOG.md](CHANGELOG.md). The
+hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`, `$`, `\`, `` ` ``,
+`[` and `::`. The tests double as documentation: see `tests/test_en.py` and `tests/test_de.py`.
 
 ## AI notice
 
