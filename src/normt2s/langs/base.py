@@ -29,6 +29,8 @@ class Language:
     date_words: Tuple[str, ...] = ()
     # regex source for dates (None = unsupported); see :meth:`format_date`
     date_regex: Optional[str] = None
+    # regex source for ordinal numbers written with a dot outside dates (None = unsupported)
+    ordinal_dot_regex: Optional[str] = None
 
     def cardinal(self, n: int, gender: Optional[str] = None) -> str:
         raise NotImplementedError
@@ -54,6 +56,10 @@ class Language:
         ``before`` is the text preceding the match (German needs it for the case ending).
         """
         return None
+
+    def format_ordinal_dot(self, m) -> str:
+        """Spoken form of an ``ordinal_dot_regex`` match (the whole match is replaced)."""
+        return m.group()
 
     def pluralize(self, singular: str) -> str:
         return singular

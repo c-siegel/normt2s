@@ -58,6 +58,7 @@ class _Compiled(NamedTuple):
     year_re: Any
     range_re: Any
     date_re: Any
+    ord_dot_re: Any
     punct_re: Any
     punct: Any
     spelled_re: Any
@@ -93,7 +94,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 20))
+_EMPTY = _Compiled(-1, *([None] * 21))
 
 
 class Normalizer:
@@ -386,8 +387,9 @@ class Normalizer:
         else:
             span_re = SPAN_RE
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
+        ord_dot_re = re.compile(lang.ordinal_dot_regex) if lang.ordinal_dot_regex else None
         return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
-                         suffix_re, scale_re, year_re, range_re, date_re, punct_re, dict(lex.punctuation),
+                         suffix_re, scale_re, year_re, range_re, date_re, ord_dot_re, punct_re, dict(lex.punctuation),
                          spelled_re, iso_re, span_re, tuple(spoken for spoken, _ in lex.protected.values()),
                          tuple(op for _, op in lex.protected.values() if op))
 
@@ -412,6 +414,8 @@ class Normalizer:
         has_digit = _DIGIT_RE.search(text) is not None
         if has_digit and c.date_re:
             text = c.date_re.sub(self._date_sub, text)
+        if has_digit and c.ord_dot_re:
+            text = c.ord_dot_re.sub(self.lang.format_ordinal_dot, text)
         text = c.pre_re.sub(lambda m: self._pre_sub(m, c), text)
         if has_digit:
             text = c.range_re.sub(f" {self.lang.range_word} ", text)

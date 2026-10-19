@@ -58,6 +58,17 @@ class German(Language):
         rf"|(?P<mo>{_MONTH_RE})\s(?P<yo>\d{{4}})(?!\d))"
     )
 
+    # "der 3. Platz", "im 21. Jahrhundert": an article or contraction, a number with a dot and a
+    # capitalised word. A sentence end ("Kapitel 3. Danach") has no article and stays a cardinal.
+    ordinal_dot_regex = (
+        r"(?<![\w.])(?P<art>(?i:der|die|das|den|dem|des|am|im|zum|zur|vom|beim))"
+        r"(?P<sp>\s+)(?P<n>\d{1,3})\.(?=\s+[A-ZÄÖÜ])"
+    )
+
+    def format_ordinal_dot(self, m) -> str:
+        ending = "e" if m.group("art").lower() in ("der", "die", "das") else "en"
+        return f"{m.group('art')}{m.group('sp')}{self.ordinal(int(m.group('n')))[:-1]}{ending}"
+
     def cardinal(self, n: int, gender: Optional[str] = None) -> str:
         if n < 0:
             return "minus " + self.cardinal(-n, gender)

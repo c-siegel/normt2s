@@ -82,6 +82,7 @@ Every row is real output from the library.
 |---|---|---|
 | Numbers | `1.234,5` | eintausendzweihundertvierunddreißig Komma fünf |
 | | `1/3`, `3/4` | ein drittel, drei viertel |
+| Ordinals | `der 3. Platz`, `im 21. Jahrhundert`, `Kapitel 3. Danach` | der dritte Platz, im einundzwanzigsten Jahrhundert, Kapitel drei. Danach |
 | Dates | `15.03.2024` | fünfzehnter März zweitausendvierundzwanzig |
 | | `am 15.03.2024` | am fünfzehnten März zweitausendvierundzwanzig |
 | | `am 3. Mai`, `im Mai 2024` | am dritten Mai, im Mai zweitausendvierundzwanzig |
@@ -553,8 +554,10 @@ list lives in `data/`.
   a digit, `(` or `[` (`a * b` is left alone).
 - **Subtraction:** `-` is only read as "minus" between two numbers with spaces around it
   (`5 - 3`). In `x - 1` it is left as it is. In LaTeX math it is always read.
-- **German ordinal dots** are only recognised in dates (`am 3. Mai`), not in general
-  (`der 3. Platz`).
+- **German ordinal dots** are recognised in dates (`am 3. Mai`) and after an article or contraction
+  before a capitalised word (`der 3. Platz`, `im 21. Jahrhundert`). Anywhere else (`Platz 3. Der
+  Rest`) a number with a dot is a cardinal. The ending follows the article (`der`/`die`/`das`:
+  *dritte*, otherwise *dritten*), which is wrong for a feminine genitive or dative (`der 3. Klasse`).
 - **German number + noun:** the gender of a number is only known for nouns that are units in the
   lexicon (`1 Stunde` is "eine Stunde", `1 Kilogramm` is "ein Kilogramm"). Other nouns stay
   `1 Haus` -> "eins Haus"; add the noun with `add_unit` to teach it.

@@ -25,7 +25,7 @@ _OPEN_STAR = re.compile(r"(?<![\d)\]*\\])\*(?![\s*])")
 _OPEN_UNDER = re.compile(r"(?<!\w)_(?![\s_])")
 _CLOSE_STAR = re.compile(r"(?<![\s*])\*(?![\d(\[*])")
 _CLOSE_UNDER = re.compile(r"(?<![\s_])_(?!\w)")
-_INITIAL_RE = re.compile(r"[A-Z]\.|\d{1,2}\.")  # initials and ordinal dots ("3. Mai")
+_INITIAL_RE = re.compile(r"[A-Z]\.|\d{1,3}\.")  # initials and ordinal dots ("3. Mai")
 
 
 class Piece(NamedTuple):
