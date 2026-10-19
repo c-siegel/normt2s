@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, NamedTuple, Optional, Sequence, Union
 
 from .langs import Language, get_language
-from .latex import LatexSpeaker
+from .latex import LatexSpeaker, find_bare
 from .lexicon import Lexicon
 
 _PROTECT = (
@@ -77,13 +77,21 @@ class Normalizer:
     """
 
     def __init__(self, lang: Union[str, Language] = "en", lexicon: Optional[Lexicon] = None,
-                 latex: str = "speak"):
-        """``latex="speak"`` reads math aloud, ``latex="keep"`` leaves LaTeX spans untouched."""
+                 latex: str = "speak", latex_bare: str = "protect"):
+        """``latex="speak"`` reads math aloud, ``latex="keep"`` leaves LaTeX spans untouched.
+
+        ``latex_bare`` is about LaTeX outside math delimiters (``a \cdot b``): ``"protect"``
+        leaves it untouched, ``"speak"`` reads it like delimited math.
+        """
         if latex not in ("speak", "keep"):
             raise ValueError("latex must be 'speak' or 'keep'")
+        if latex_bare not in ("protect", "speak"):
+            raise ValueError("latex_bare must be 'protect' or 'speak'")
+        self._bare_speak = latex_bare == "speak"
         self.lang = get_language(lang) if isinstance(lang, str) else lang
         self.lexicon = lexicon or Lexicon.builtin(self.lang)
         self._latex = LatexSpeaker(self) if latex == "speak" else None
+        self._bare = self._latex or (LatexSpeaker(self) if self._bare_speak else None)
         self._lock = threading.Lock()
         self._c = _EMPTY
 
@@ -126,16 +134,16 @@ class Normalizer:
         pos = 0
         for m in SPAN_RE.finditer(text):
             if m.start() > pos:
-                out.append(self._plain(text[pos:m.start()], c))
+                out.append(self._gap(text[pos:m.start()], c))
             spoken = None
             if self._latex is not None and m.lastgroup in ("m1", "m2", "m3", "m4"):
                 spoken = self._latex.speak(m.group(m.lastgroup))
             out.append(m.group() if spoken is None else spoken)
             pos = m.end()
         if pos == 0:
-            return self._plain(text, c)
+            return self._gap(text, c)
         if pos < len(text):
-            out.append(self._plain(text[pos:], c))
+            out.append(self._gap(text[pos:], c))
         return "".join(out)
 
     __call__ = normalize
@@ -155,6 +163,31 @@ class Normalizer:
         out = s.flush()
         if out:
             yield out
+
+    def _gap(self, text: str, c: _Compiled) -> str:
+        """Text between protected spans: bare LaTeX runs are kept (or spoken), the rest normalized."""
+        runs = find_bare(text, self.lexicon) if "\\" in text else ()
+        if not runs:
+            return self._plain(text, c)
+        out, pos = [], 0
+        for start, end, speakable in runs:
+            if start > pos:
+                out.append(self._plain(text[pos:start], c))
+            spoken = None
+            if speakable and self._bare_speak:
+                spoken = self._bare.speak(text[start:end])
+            if spoken is None:
+                out.append(text[start:end])
+            else:
+                if out and out[-1][-1:].isalnum():
+                    out.append(" ")
+                out.append(spoken)
+                if text[end:end + 1].isalnum():
+                    out.append(" ")
+            pos = end
+        if pos < len(text):
+            out.append(self._plain(text[pos:], c))
+        return "".join(out)
 
     # ------------------------------------------------------------- compilation
     def ensure_compiled(self) -> _Compiled:

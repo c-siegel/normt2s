@@ -12,5 +12,7 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
   New lexicon table `operators`.
 - **Output change (F3):** `—` (em dash) is spoken as a pause (", "); `10—20` as a range. New
   lexicon table `punctuation` and `add_punctuation`.
+- **Bug fix (F5):** bare LaTeX outside math delimiters is no longer rewritten by the number pass
+  (`\frac{1}{2}` stays). New option `latex_bare="speak"` reads it aloud.
 - **Output change (F4):** built-in formulas are spelled (`H2O` -> "H two O"), isotopes `U-235` ->
   "U two hundred thirty-five". New lexicon list `spelled`, `add_spelled`, `data/elements.json`.

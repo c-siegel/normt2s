@@ -586,3 +586,114 @@ class LatexSpeaker:
         if name == "cases":
             return self.phrase("cases", rows=body)
         return body
+
+
+# ---------------------------------------------------------------- bare LaTeX (no delimiters)
+_CMD_RE = re.compile(r"\\([A-Za-z]+)")
+_DIGITS_RE = re.compile(r"\d+(?:\.\d+)?")
+_LETTERS_RE = re.compile(r"[A-Za-z]+")
+_BARE_OPS = frozenset("+-*/=<>()[]")
+_STRUCTURE = (
+    {"frac", "dfrac", "tfrac", "cfrac", "binom", "dbinom", "tbinom", "sqrt", "mathbb", "left",
+     "right", "lfloor", "rfloor", "lceil", "rceil", "langle", "rangle", "prime"}
+    | set(_ACCENTS) | _TEXTLIKE | _STYLE | set(_BIGOPS)
+)
+
+
+def _known(name: str, lex) -> bool:
+    return ("\\" + name in lex.latex_commands or name in lex.latex_functions
+            or name in GREEK or name in _STRUCTURE)
+
+
+def _brace_match(text: str) -> dict:
+    """``{`` index -> index of its ``}`` (only for balanced pairs on one line); linear time."""
+    match, stack, i, n = {}, [], 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "{":
+            stack.append(i)
+        elif c == "}" and stack:
+            match[stack.pop()] = i
+        elif c == "\n":
+            stack.clear()
+        i += 1
+    return match
+
+
+def find_bare(text: str, lex) -> List[tuple]:
+    """Runs of LaTeX outside math delimiters, as ``(start, end, speakable)`` triples.
+
+    A run starts at ``\name`` when the command is known to the lexicon (or is any command
+    directly followed by ``{``, which is protected but never spoken) and extends over balanced
+    ``{}`` groups, scripts, further known commands, digits, single letters, simple operators
+    and blanks. It stops before a word of two or more letters, a sentence mark, a newline or
+    any other character. A run containing unbalanced braces is kept whole but not speakable.
+    """
+    if "\\" not in text:
+        return []
+    match = _brace_match(text)
+    runs, pos, n = [], 0, len(text)
+    for m in _CMD_RE.finditer(text):
+        start = m.start()
+        if start < pos or (start and text[start - 1] == "\\"):
+            continue
+        known = _known(m.group(1), lex)
+        if not known and text[m.end():m.end() + 1] != "{":
+            continue
+        last = j = m.end()
+        prev, bad = "cmd", False
+        while j < n:
+            ch = text[j]
+            if ch == "{":
+                if j != last and not (known and prev == "script"):
+                    break
+                if prev not in ("cmd", "grp", "script"):
+                    break
+                if j in match:
+                    j = last = match[j] + 1
+                    prev = "grp"
+                else:  # unbalanced: keep scanning, but the run is verbatim only
+                    bad = True
+                    j = last = j + 1
+                    prev = "op"
+            elif not known:
+                break
+            elif ch == "}":
+                bad = True
+                j = last = j + 1
+                prev = "op"
+            elif ch in "^_":
+                if prev == "script":
+                    break
+                j += 1
+                prev = "script"
+            elif ch == "\\":
+                cm = _CMD_RE.match(text, j)
+                if not cm or not _known(cm.group(1), lex):
+                    break
+                j = last = cm.end()
+                prev = "cmd"
+            elif ch.isdigit():
+                j = last = _DIGITS_RE.match(text, j).end()
+                prev = "atom"
+            elif "A" <= ch <= "z" and ch.isalpha():
+                w = _LETTERS_RE.match(text, j)
+                if w.end() - j > 1:
+                    break
+                j = last = w.end()
+                prev = "atom"
+            elif ch in _BARE_OPS:
+                j = last = j + 1
+                prev = "op"
+            elif ch in " \t":
+                j += 1
+            else:
+                break
+        while last > m.end() and text[last - 1] in "+-*/=<>":
+            last -= 1
+        runs.append((start, last, known and not bad))
+        pos = last
+    return runs

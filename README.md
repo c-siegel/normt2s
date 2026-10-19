@@ -239,6 +239,11 @@ Good to know:
 - **Malformed LaTeX** never raises. It is left exactly as it was written.
 - **Dollar signs:** a single `$` only starts math under the pandoc rule, so
   `from $5 to $6` stays currency.
+- **Bare LaTeX** (without `$...$`) such as `\frac{1}{2}` or `a \cdot b` is protected by default:
+  its numbers are not rewritten (before, `\frac{1}{2}` became `\frac{one}{two}`). Use
+  `Normalizer("en", latex_bare="speak")` to read it like delimited math. A run starts at a known
+  command and stops before a word, a sentence mark or a newline; unknown commands
+  (`C:\Users\name`) and unbalanced braces are left as they are.
 - **Turn it off** with `Normalizer("en", latex="keep")` to leave all math untouched.
 - **Commands vs. functions:** `add_latex_command` is for symbol-like names (`\cdot`, `\R`),
   `add_latex_function` for names applied to an argument (`\sinc x`). Commands win when both exist,
@@ -291,7 +296,7 @@ The trade-off: speech starts at the end of the first sentence, not at the first 
 ## Reference: options and API
 
 ```python
-Normalizer(lang="en", lexicon=None, latex="speak")
+Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect")
 ```
 
 | Argument | Meaning |
@@ -299,6 +304,7 @@ Normalizer(lang="en", lexicon=None, latex="speak")
 | `lang` | `"en"` or `"de"` (or a `Language` object) |
 | `lexicon` | a `Lexicon` to use instead of the built-in data |
 | `latex` | `"speak"` (default) reads math aloud, `"keep"` leaves it untouched |
+| `latex_bare` | LaTeX outside math delimiters: `"protect"` (default) keeps it, `"speak"` reads it |
 
 | Call | What it does |
 |---|---|
