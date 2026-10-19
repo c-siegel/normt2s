@@ -36,7 +36,13 @@ normalize("Der Zug fährt 120 km/h, z. B. um 14:30.", lang="de")
 
 ## Install
 
-The package is not on PyPI yet. From a clone of the repository:
+`normt2s` is available on [PyPI](https://pypi.org/project/normt2s/):
+
+```
+pip install normt2s
+```
+
+To work on the library itself, install from a clone of the repository instead:
 
 ```
 pip install -e .
