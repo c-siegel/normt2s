@@ -7,9 +7,9 @@ from typing import Dict, Optional, Union
 from .lexicon import Lexicon
 from .normalizer import Normalizer
 from .rules import Rule, RuleSet
-from .stream import StreamNormalizer
+from .stream import Piece, StreamNormalizer
 
-__all__ = ["Normalizer", "Lexicon", "StreamNormalizer", "Rule", "RuleSet", "normalize",
+__all__ = ["Normalizer", "Lexicon", "StreamNormalizer", "Piece", "Rule", "RuleSet", "normalize",
            "get_normalizer"]
 __version__ = "0.2.0"
 

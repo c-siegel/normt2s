@@ -205,12 +205,12 @@ class Normalizer:
         s = self.stream(max_buffer, first_min_chars=first_min_chars, min_chars=min_chars,
                         rules=rules)
         for chunk in chunks:
-            out = s.feed(chunk)
-            if out:
-                yield out
-        out = s.flush()
-        if out:
-            yield out
+            for piece in s.feed_pieces(chunk):
+                if piece.spoken:
+                    yield piece.spoken
+        last = s.flush_piece()
+        if last is not None and last.spoken:
+            yield last.spoken
 
     def _gap(self, text: str, c: _Compiled, rules: Optional[RuleSet] = None,
              applied: Optional[list] = None) -> str:

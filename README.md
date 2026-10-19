@@ -401,8 +401,31 @@ stream = n.stream(first_min_chars=25, min_chars=80, max_buffer=300)
 - The defaults (`0`, `0`) keep the old behaviour. Whatever the three values, the joined output
   is identical to normalizing the whole text at once (tested with random texts and chunkings).
 
-One `feed()` call releases at most one chunk, so with `first_min_chars` the rest of a very large
-token is released by the next `feed()` or by `flush()`.
+A single large token can release several chunks at once (a short first one, then the rest);
+`feed()` returns them joined, `feed_pieces()` (below) keeps them apart.
+
+### Showing the text while speaking it
+
+A chat UI shows the original text (Markdown, formulas) and speaks the normalized text, and both
+must stay in step. `feed_pieces()` returns `Piece(raw, spoken)` tuples:
+
+```python
+from normt2s import Piece          # NamedTuple(raw: str, spoken: str)
+
+for piece in stream.feed_pieces(token):   # a list: zero or more pieces
+    show(piece.raw)
+    speak(piece.spoken)
+last = stream.flush_piece()               # Piece, or None if nothing was buffered
+if last:
+    show(last.raw)
+    speak(last.spoken)
+```
+
+`"".join(p.raw ...)` is exactly the input and `"".join(p.spoken ...)` is exactly
+`normalize(input)`, whatever the chunking (tested). A piece whose `spoken` is empty, for example
+one that was only Markdown markers, is still returned so that `raw` is never lost.
+`feed()` and `flush()` stay and return the `spoken` parts joined; `normalize_stream` yields one
+`spoken` string per piece.
 
 ## Reference: options and API
 
@@ -424,6 +447,7 @@ Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect", markdow
 | `get_normalizer(lang)` | the shared instance behind `normalize(text, "en")` |
 | `n.normalize(text, rules=None, applied=None)` (or `n(text)`) | normalize a string, optionally with a `RuleSet` |
 | `n.stream(max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | a `StreamNormalizer` with `feed()` and `flush()` |
+| `stream.feed_pieces(chunk)`, `stream.flush_piece()` | `Piece(raw, spoken)` objects, see *Showing the text while speaking it* |
 | `n.normalize_stream(chunks, max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | generator over speakable pieces |
 | `Rule(...)`, `RuleSet(rules)`, `RuleSet.from_dicts(...)`, `RuleSet.load(path)` | user pronunciation rules (see above) |
 | `n.add_*`, `n.load_lexicon(path)` | extend the dictionaries (see above) |

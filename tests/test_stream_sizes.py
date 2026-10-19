@@ -48,8 +48,8 @@ def test_first_chunk_is_short_then_long():
     n = Normalizer("en")
     text = "Hello there. This is the second sentence. And the third one. Fourth"
     s = n.stream(first_min_chars=10, min_chars=30)
-    assert s.feed(text) == "Hello there. "
-    assert s.feed("") == "This is the second sentence. And the third one. "
+    pieces = s.feed_pieces(text)
+    assert [p.raw for p in pieces] == ["Hello there. ", "This is the second sentence. And the third one. "]
 
 
 def test_min_chars_waits():
@@ -84,5 +84,5 @@ def test_max_buffer_fallback_unchanged():
 def test_normalize_stream_sizes():
     n = Normalizer("en")
     text = "Hello there. This is the second sentence. And the third one. Fourth"
-    got = list(n.normalize_stream(iter([text, ""]), first_min_chars=10, min_chars=30))
+    got = list(n.normalize_stream(iter([text]), first_min_chars=10, min_chars=30))
     assert got == ["Hello there. ", "This is the second sentence. And the third one. ", "Fourth"]

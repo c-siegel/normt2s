@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 from bisect import bisect_left
+from typing import List, NamedTuple, Optional
 
 from . import markdown as _md
 from .normalizer import SPAN_RE
@@ -25,6 +26,13 @@ _OPEN_UNDER = re.compile(r"(?<!\w)_(?![\s_])")
 _CLOSE_STAR = re.compile(r"(?<![\s*])\*(?![\d(\[*])")
 _CLOSE_UNDER = re.compile(r"(?<![\s_])_(?!\w)")
 _INITIAL_RE = re.compile(r"[A-Z]\.|\d{1,2}\.")  # initials and ordinal dots ("3. Mai")
+
+
+class Piece(NamedTuple):
+    """One released chunk: the ``raw`` text as it arrived and its ``spoken`` (normalized) form."""
+
+    raw: str
+    spoken: str
 
 
 def _interior(spans):
@@ -62,20 +70,39 @@ class StreamNormalizer:
             self._mid_line = not head.endswith("\n")
         return out
 
+    def feed_pieces(self, chunk: str) -> List[Piece]:
+        """Add a chunk; returns the pieces that are now safe to show and speak (maybe none).
+
+        Several pieces are possible: with ``first_min_chars`` a large token releases a short
+        first piece and then the rest. A piece whose ``spoken`` is empty (for example only
+        Markdown markers) is still returned, so the ``raw`` text is never lost.
+        """
+        self._buf += chunk
+        pieces: List[Piece] = []
+        while True:
+            cut = self._find_cut()
+            if not cut:
+                return pieces
+            head, self._buf = self._buf[:cut], self._buf[cut:]
+            self._released = True
+            pieces.append(Piece(head, self._release(head)))
+
+    def flush_piece(self) -> Optional[Piece]:
+        """The last piece (``None`` if nothing was buffered). Call once the stream has ended."""
+        head, self._buf = self._buf, ""
+        if not head:
+            return None
+        self._released = True
+        return Piece(head, self._release(head))
+
     def feed(self, chunk: str) -> str:
         """Add a chunk; returns the normalized text that is now safe to speak (maybe empty)."""
-        self._buf += chunk
-        cut = self._find_cut()
-        if not cut:
-            return ""
-        head, self._buf = self._buf[:cut], self._buf[cut:]
-        self._released = True
-        return self._release(head)
+        return "".join(p.spoken for p in self.feed_pieces(chunk))
 
     def flush(self) -> str:
         """Normalize and return whatever is left. Call once the stream has ended."""
-        head, self._buf = self._buf, ""
-        return self._release(head)
+        piece = self.flush_piece()
+        return piece.spoken if piece else ""
 
     # ------------------------------------------------------------------ internals
     def _find_cut(self) -> int:
