@@ -6,6 +6,7 @@ Regexes are compiled lazily and recompiled only when the lexicon changes.
 
 from __future__ import annotations
 
+import functools
 import re
 import threading
 from pathlib import Path
@@ -86,6 +87,11 @@ def _decode(s: str) -> int:
     for ch in s:
         n = n * 256 + ord(ch) - 0xE100
     return n
+
+
+@functools.lru_cache(maxsize=None)
+def _time_word_re(word: str):
+    return re.compile(r"\s?" + re.escape(word) + r"(?!\w)")
 
 
 _NEXT_WORD = re.compile(r" ([^\W\d_][\w-]*)")
@@ -331,7 +337,7 @@ class Normalizer:
         # numbers
         ts, ds = esc(lang.thousands_sep), esc(lang.decimal_sep)
         guard = r"(?!\.\d)" if lang.decimal_sep == "." else ""
-        thous = rf"\d{{1,3}}(?:{ts}\d{{3}})+(?!\d)(?:{ds}\d+)?"
+        thous = rf"\d{{1,3}}(?:(?:{ts}|[ {_NBSP}])\d{{3}})+(?!\d)(?:{ds}\d+)?"
         ver = r"\d+(?:\.\d+){2,}"
         plain = rf"\d+(?:{ds}\d+)?{guard}"
         cur_chars = "".join(esc(c) for c in lex.currencies if len(c) == 1)
@@ -617,6 +623,9 @@ class Normalizer:
             if sm and sm.group("ampm") and 1 <= hh <= 12:
                 suffix, end = sm.group("ampm").strip(), sm.end()
             if hh < 24:
+                if lang.time_word:  # "14:30 Uhr": the time already says it
+                    um = _time_word_re(lang.time_word).match(text, end)
+                    end = um.end() if um else end
                 return lang.time(hh, mm, suffix), end
             return f"{self.lang.cardinal(hh)} {self.lang.cardinal(mm)}", end
 
@@ -624,7 +633,7 @@ class Normalizer:
         if m.group("ver"):
             return f" {lang.point} ".join(self._words(p, None, False) for p in raw.split(".")), end
         if m.group("th"):
-            raw = raw.replace(lang.thousands_sep, "")
+            raw = re.sub(rf"[{re.escape(lang.thousands_sep)} {_NBSP}]", "", raw)
         if lang.decimal_sep != ".":
             raw = raw.replace(lang.decimal_sep, ".")
         intpart, sep, frac = raw.partition(".")

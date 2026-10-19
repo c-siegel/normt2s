@@ -4,6 +4,9 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
 
 ## 0.4.0
 
+- **Bug fix (German):** `um 14:30 Uhr` -> "um vierzehn Uhr dreißig" (was "... dreißig Uhr Uhr").
+- **Output change:** a space, no-break space or thin space between groups of three digits is a
+  thousands separator: `1 000 apples` -> "one thousand apples" (was "one zero zero zero").
 - **Output change (F12, German):** `der 3. Platz` -> "der dritte Platz", `im 21. Jahrhundert` ->
   "im einundzwanzigsten Jahrhundert" (was "der drei. Platz"). New `Language.ordinal_dot_regex` hook.
 - **Output change (F11, German):** a number before a known unit noun takes its gender: `1 Stunde` ->

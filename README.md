@@ -60,7 +60,7 @@ Every row is real output from the library.
 
 | Category | Input | Spoken |
 |---|---|---|
-| Numbers | `1,234 points` | one thousand two hundred thirty-four points |
+| Numbers | `1,234 points`, `1 000 points` | one thousand two hundred thirty-four points, one thousand points |
 | | `3.14`, `-5`, `007` | three point one four, minus five, zero zero seven |
 | | `1st`, `23rd` | first, twenty-third |
 | | `50%`, `1/2 cup` | fifty percent, one half cup |
@@ -86,7 +86,7 @@ Every row is real output from the library.
 | Dates | `15.03.2024` | fünfzehnter März zweitausendvierundzwanzig |
 | | `am 15.03.2024` | am fünfzehnten März zweitausendvierundzwanzig |
 | | `am 3. Mai`, `im Mai 2024` | am dritten Mai, im Mai zweitausendvierundzwanzig |
-| Time | `um 14:30` | um vierzehn Uhr dreißig |
+| Time | `um 14:30`, `um 14:30 Uhr` | um vierzehn Uhr dreißig |
 | Units | `1 kg`, `1 min`, `21 min` | ein Kilogramm, eine Minute, einundzwanzig Minuten |
 | Number + unit word | `1 Stunde`, `1 Kilogramm`, `21 Stunden` | eine Stunde, ein Kilogramm, einundzwanzig Stunden |
 | Currency | `3,50 €`, `5 €` | drei Euro fünfzig Cent, fünf Euro |

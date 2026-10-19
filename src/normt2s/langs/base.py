@@ -27,6 +27,8 @@ class Language:
     # words that give a following date its case ending (German "am 15.03."); a stream never
     # cuts right after them
     date_words: Tuple[str, ...] = ()
+    # a word written after a clock time that ``time()`` already speaks (German "14:30 Uhr")
+    time_word: Optional[str] = None
     # regex source for dates (None = unsupported); see :meth:`format_date`
     date_regex: Optional[str] = None
     # regex source for ordinal numbers written with a dot outside dates (None = unsupported)
