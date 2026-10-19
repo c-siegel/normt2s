@@ -24,6 +24,9 @@ class Language:
     # written scale words allowed after a currency amount ("$5 million")
     scale_words: Tuple[str, ...] = ()
     digit_words: Tuple[str, ...] = ()
+    # words that give a following date its case ending (German "am 15.03."); a stream never
+    # cuts right after them
+    date_words: Tuple[str, ...] = ()
     # regex source for dates (None = unsupported); see :meth:`format_date`
     date_regex: Optional[str] = None
 

@@ -12,6 +12,7 @@ unit, abbreviation, code span or math span can still be completed by later token
 from __future__ import annotations
 
 import re
+from bisect import bisect_left
 
 from . import markdown as _md
 from .normalizer import SPAN_RE
@@ -26,11 +27,32 @@ _CLOSE_UNDER = re.compile(r"(?<![\s_])_(?!\w)")
 _INITIAL_RE = re.compile(r"[A-Z]\.|\d{1,2}\.")  # initials and ordinal dots ("3. Mai")
 
 
+def _interior(spans):
+    """``f(pos)``: is ``pos`` strictly inside one of the ``(start, end)`` spans? (O(log n))"""
+    merged = []
+    for a, b in sorted(spans):
+        if merged and a < merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], b)
+        else:
+            merged.append([a, b])
+    starts = [a for a, _ in merged]
+
+    def inside(pos: int) -> bool:
+        i = bisect_left(starts, pos) - 1
+        return i >= 0 and pos < merged[i][1]
+
+    return inside
+
+
 class StreamNormalizer:
-    def __init__(self, normalizer, max_buffer: int = 400, rules=None):
+    def __init__(self, normalizer, max_buffer: int = 400, rules=None, *,
+                 first_min_chars: int = 0, min_chars: int = 0):
         self._n = normalizer
         self._max = max_buffer
         self._rules = rules
+        self._first_min = max(0, first_min_chars)
+        self._min = max(0, min_chars)
+        self._released = False  # has anything been released yet?
         self._buf = ""
         self._mid_line = False  # does the next text continue a line already released?
 
@@ -47,6 +69,7 @@ class StreamNormalizer:
         if not cut:
             return ""
         head, self._buf = self._buf[:cut], self._buf[cut:]
+        self._released = True
         return self._release(head)
 
     def flush(self) -> str:
@@ -78,20 +101,36 @@ class StreamNormalizer:
             spans += _md.inline_spans(head, SPAN_RE)
         if self._rules is not None:  # a rule such as "e. g." may contain a sentence mark
             spans += [m.span() for m, _ in self._rules.scan(head)]
+        inside = _interior(spans)
+
+        def usable(cut: int) -> bool:
+            return not inside(cut) and not (
+                self._rules is not None and self._rules.dangling(head[:cut]))
+
         if cuts:
-            for cut in sorted(cuts, reverse=True):
-                if not any(a < cut < b for a, b in spans) and not (
-                        self._rules is not None and self._rules.dangling(head[:cut])):
-                    return cut
+            if not self._released and self._first_min:
+                # first audio early: the first boundary that is long enough
+                for cut in sorted(cuts):
+                    if cut >= self._first_min and usable(cut):
+                        return cut
+            else:
+                # later chunks: the last boundary, but wait until the chunk is long enough
+                for cut in sorted(cuts, reverse=True):
+                    if usable(cut):
+                        if cut >= self._min:
+                            return cut
+                        break
 
         if len(head) > self._max:
+            # words whose meaning depends on the number after them ("in 1984", "am 3. Mai")
+            hold = set(n.lang.year_prepositions) | set(n.lang.date_words)
             for m in reversed(list(re.finditer(r"\s", head))):
-                if n._markdown and any(a < m.end() < b for a, b in spans):
+                if inside(m.end()):
                     continue
                 prev = head[:m.start()].rsplit(None, 1)
                 prev = prev[-1] if prev else ""
                 if not prev or prev[-1].isdigit() or prev in n.no_boundary_tokens \
-                        or prev[-1] in "$€£¥-−":
+                        or prev[-1] in "$€£¥-−" or prev.lower() in hold:
                     continue
                 return m.end()
         return 0

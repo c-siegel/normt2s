@@ -2,6 +2,12 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## Unreleased (0.3.0)
+
+- **New (F8):** `stream(first_min_chars=, min_chars=)` and the same on `normalize_stream`; the defaults keep
+  the old behaviour. The `max_buffer` fallback no longer cuts inside a code, URL or math span, nor
+  right after a year preposition (`in 1984`) or German date word (`am 15.03.`).
+
 ## 0.2.0
 
 - Thread-safe compilation: `Normalizer` rebuilds its regexes under a lock and publishes them as

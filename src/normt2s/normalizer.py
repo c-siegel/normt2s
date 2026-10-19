@@ -186,15 +186,24 @@ class Normalizer:
 
     __call__ = normalize
 
-    def stream(self, max_buffer: int = 400, *, rules: Optional[RuleSet] = None):
-        """A stateful wrapper for token-by-token LLM output, see :class:`StreamNormalizer`."""
+    def stream(self, max_buffer: int = 400, *, first_min_chars: int = 0, min_chars: int = 0,
+               rules: Optional[RuleSet] = None):
+        """A stateful wrapper for token-by-token LLM output, see :class:`StreamNormalizer`.
+
+        ``first_min_chars`` releases the first chunk at the first boundary at least that long
+        (early audio); ``min_chars`` makes later chunks at least that long. 0 (default) keeps
+        the behaviour of releasing everything up to the last boundary as soon as possible.
+        """
         from .stream import StreamNormalizer
 
-        return StreamNormalizer(self, max_buffer, rules=rules)
+        return StreamNormalizer(self, max_buffer, rules=rules, first_min_chars=first_min_chars,
+                                min_chars=min_chars)
 
     def normalize_stream(self, chunks: Iterable[str], max_buffer: int = 400, *,
+                         first_min_chars: int = 0, min_chars: int = 0,
                          rules: Optional[RuleSet] = None) -> Iterator[str]:
-        s = self.stream(max_buffer, rules=rules)
+        s = self.stream(max_buffer, first_min_chars=first_min_chars, min_chars=min_chars,
+                        rules=rules)
         for chunk in chunks:
             out = s.feed(chunk)
             if out:

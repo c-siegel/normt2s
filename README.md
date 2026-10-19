@@ -382,6 +382,28 @@ is tested). If a long run has no boundary, it is flushed after `max_buffer` char
 
 The trade-off: speech starts at the end of the first sentence, not at the first token.
 
+### Chunk sizes
+
+A voice UI wants the first audio early and later chunks long enough to sound natural and to save
+TTS requests:
+
+```python
+stream = n.stream(first_min_chars=25, min_chars=80, max_buffer=300)
+```
+
+- Before anything has been released, the **first** boundary at least `first_min_chars` long is
+  used, so the first chunk is short.
+- After that, text is released at the **last** boundary, but only once that is at least
+  `min_chars` long; otherwise the stream waits.
+- `max_buffer` is the fallback for a long run without a boundary, as before. It never cuts right
+  after a word that gives the next number its meaning (`in 1984`, German `am 15.03.`).
+- `flush()` releases everything, however short.
+- The defaults (`0`, `0`) keep the old behaviour. Whatever the three values, the joined output
+  is identical to normalizing the whole text at once (tested with random texts and chunkings).
+
+One `feed()` call releases at most one chunk, so with `first_min_chars` the rest of a very large
+token is released by the next `feed()` or by `flush()`.
+
 ## Reference: options and API
 
 ```python
@@ -401,8 +423,8 @@ Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect", markdow
 | `normalize(text, lang="en")` | one-shot helper; `lang` may be a code or your own `Normalizer` |
 | `get_normalizer(lang)` | the shared instance behind `normalize(text, "en")` |
 | `n.normalize(text, rules=None, applied=None)` (or `n(text)`) | normalize a string, optionally with a `RuleSet` |
-| `n.stream(max_buffer=400, rules=None)` | a `StreamNormalizer` with `feed()` and `flush()` |
-| `n.normalize_stream(chunks, rules=None)` | generator over speakable pieces |
+| `n.stream(max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | a `StreamNormalizer` with `feed()` and `flush()` |
+| `n.normalize_stream(chunks, max_buffer=400, first_min_chars=0, min_chars=0, rules=None)` | generator over speakable pieces |
 | `Rule(...)`, `RuleSet(rules)`, `RuleSet.from_dicts(...)`, `RuleSet.load(path)` | user pronunciation rules (see above) |
 | `n.add_*`, `n.load_lexicon(path)` | extend the dictionaries (see above) |
 | `n.lexicon` | the underlying `Lexicon` with the LaTeX methods |

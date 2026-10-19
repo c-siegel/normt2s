@@ -50,6 +50,7 @@ class German(Language):
     scale_words = ("Tausend", "Million", "Millionen", "Milliarde", "Milliarden", "Billion",
                    "Billionen")
     digit_words = tuple(_ONES[:10])
+    date_words = tuple(_DATIVE | {"der"})
     date_regex = (
         r"(?<![\w.])(?:(?P<iy>\d{4})-(?P<im>\d{2})-(?P<id>\d{2})(?![\d-])"
         r"|(?P<d>\d{1,2})\.(?:(?P<m>\d{1,2})\.(?:(?P<y>\d{4})(?!\d)|(?!\d))"
