@@ -1,0 +1,536 @@
+{
+ "abbreviations": {
+  "e.g.": "for example",
+  "i.e.": "that is",
+  "etc.": {
+   "to": "et cetera",
+   "final": true
+  },
+  "vs.": "versus",
+  "cf.": "compare",
+  "approx.": "approximately",
+  "w.r.t.": "with respect to",
+  "a.k.a.": "also known as",
+  "et al.": "and others",
+  "Dr.": "Doctor",
+  "Mr.": "Mister",
+  "Mrs.": "Missus",
+  "Ms.": "Miss",
+  "Prof.": "Professor",
+  "Jr.": "Junior",
+  "Sr.": "Senior",
+  "fig.": "figure",
+  "eq.": "equation",
+  "sec.": "section",
+  "ch.": "chapter",
+  "pp.": "pages",
+  "vol.": "volume",
+  "dept.": "department",
+  "max.": "maximum",
+  "avg.": "average",
+  "Inc.": "Incorporated",
+  "Ltd.": "Limited",
+  "U.S.": "U S",
+  "U.K.": "U K",
+  "24/7": "twenty four seven"
+ },
+ "units": {
+  "mm": [
+   "millimeter"
+  ],
+  "cm": [
+   "centimeter"
+  ],
+  "m": [
+   "meter"
+  ],
+  "km": [
+   "kilometer"
+  ],
+  "µm": [
+   "micrometer"
+  ],
+  "nm": [
+   "nanometer"
+  ],
+  "mi": [
+   "mile"
+  ],
+  "ft": [
+   "foot",
+   "feet"
+  ],
+  "yd": [
+   "yard"
+  ],
+  "mm²": [
+   "square millimeter"
+  ],
+  "cm²": [
+   "square centimeter"
+  ],
+  "m²": [
+   "square meter"
+  ],
+  "km²": [
+   "square kilometer"
+  ],
+  "cm³": [
+   "cubic centimeter"
+  ],
+  "m³": [
+   "cubic meter"
+  ],
+  "mg": [
+   "milligram"
+  ],
+  "g": [
+   "gram"
+  ],
+  "kg": [
+   "kilogram"
+  ],
+  "lb": [
+   "pound"
+  ],
+  "lbs": [
+   "pound",
+   "pounds"
+  ],
+  "oz": [
+   "ounce"
+  ],
+  "ml": [
+   "milliliter"
+  ],
+  "cl": [
+   "centiliter"
+  ],
+  "l": [
+   "liter"
+  ],
+  "L": [
+   "liter"
+  ],
+  "ns": [
+   "nanosecond"
+  ],
+  "µs": [
+   "microsecond"
+  ],
+  "ms": [
+   "millisecond"
+  ],
+  "s": [
+   "second"
+  ],
+  "s²": [
+   "second squared"
+  ],
+  "min": [
+   "minute"
+  ],
+  "h": [
+   "hour"
+  ],
+  "yr": [
+   "year"
+  ],
+  "°C": [
+   "degree Celsius",
+   "degrees Celsius"
+  ],
+  "°F": [
+   "degree Fahrenheit",
+   "degrees Fahrenheit"
+  ],
+  "°": [
+   "degree"
+  ],
+  "mph": [
+   "mile per hour"
+  ],
+  "V": [
+   "volt"
+  ],
+  "mV": [
+   "millivolt"
+  ],
+  "kV": [
+   "kilovolt"
+  ],
+  "mA": [
+   "milliampere"
+  ],
+  "W": [
+   "watt"
+  ],
+  "kW": [
+   "kilowatt"
+  ],
+  "MW": [
+   "megawatt"
+  ],
+  "GW": [
+   "gigawatt"
+  ],
+  "kWh": [
+   "kilowatt hour"
+  ],
+  "mAh": [
+   "milliamp hour"
+  ],
+  "Ω": [
+   "ohm"
+  ],
+  "kΩ": [
+   "kiloohm"
+  ],
+  "Hz": [
+   "hertz",
+   "hertz"
+  ],
+  "kHz": [
+   "kilohertz",
+   "kilohertz"
+  ],
+  "MHz": [
+   "megahertz",
+   "megahertz"
+  ],
+  "GHz": [
+   "gigahertz",
+   "gigahertz"
+  ],
+  "kJ": [
+   "kilojoule"
+  ],
+  "kcal": [
+   "kilocalorie"
+  ],
+  "cal": [
+   "calorie"
+  ],
+  "eV": [
+   "electron volt"
+  ],
+  "Pa": [
+   "pascal"
+  ],
+  "kPa": [
+   "kilopascal"
+  ],
+  "bar": [
+   "bar"
+  ],
+  "mol": [
+   "mole"
+  ],
+  "mmol": [
+   "millimole"
+  ],
+  "dB": [
+   "decibel"
+  ],
+  "rpm": [
+   "revolution per minute"
+  ],
+  "fps": [
+   "frame per second"
+  ],
+  "px": [
+   "pixel"
+  ],
+  "kbit": [
+   "kilobit"
+  ],
+  "Mbit": [
+   "megabit"
+  ],
+  "Gbit": [
+   "gigabit"
+  ],
+  "kB": [
+   "kilobyte"
+  ],
+  "KB": [
+   "kilobyte"
+  ],
+  "MB": [
+   "megabyte"
+  ],
+  "GB": [
+   "gigabyte"
+  ],
+  "TB": [
+   "terabyte"
+  ]
+ },
+ "currencies": {
+  "$": {
+   "major": [
+    "dollar"
+   ],
+   "minor": [
+    "cent"
+   ]
+  },
+  "€": {
+   "major": [
+    "euro"
+   ],
+   "minor": [
+    "cent"
+   ]
+  },
+  "£": {
+   "major": [
+    "pound"
+   ],
+   "minor": [
+    "penny",
+    "pence"
+   ]
+  },
+  "¥": {
+   "major": [
+    "yen",
+    "yen"
+   ]
+  },
+  "USD": {
+   "major": [
+    "dollar"
+   ],
+   "minor": [
+    "cent"
+   ]
+  },
+  "EUR": {
+   "major": [
+    "euro"
+   ],
+   "minor": [
+    "cent"
+   ]
+  },
+  "GBP": {
+   "major": [
+    "pound"
+   ],
+   "minor": [
+    "penny",
+    "pence"
+   ]
+  }
+ },
+ "symbols": {
+  "=": "equals",
+  "+": "plus",
+  "×": "times",
+  "÷": "divided by",
+  "≠": "is not equal to",
+  "≤": "is less than or equal to",
+  "≥": "is greater than or equal to",
+  "≈": "is approximately equal to",
+  "<": "is less than",
+  ">": "is greater than",
+  "±": "plus or minus",
+  "−": "minus",
+  "&": "and",
+  "%": "percent",
+  "^2": "squared",
+  "^3": "cubed",
+  "^": "to the power of",
+  "²": "squared",
+  "³": "cubed",
+  "#": "number"
+ },
+ "latex": {
+  "commands": {
+   "\\times": "times",
+   "\\cdot": "times",
+   "\\div": "divided by",
+   "\\pm": "plus or minus",
+   "\\mp": "minus or plus",
+   "\\neq": "is not equal to",
+   "\\ne": "is not equal to",
+   "\\leq": "is less than or equal to",
+   "\\le": "is less than or equal to",
+   "\\geq": "is greater than or equal to",
+   "\\ge": "is greater than or equal to",
+   "\\approx": "is approximately equal to",
+   "\\sim": "is similar to",
+   "\\equiv": "is equivalent to",
+   "\\cong": "is congruent to",
+   "\\propto": "is proportional to",
+   "\\ll": "is much less than",
+   "\\gg": "is much greater than",
+   "\\to": "to",
+   "\\rightarrow": "to",
+   "\\leftarrow": "from",
+   "\\mapsto": "maps to",
+   "\\Rightarrow": "implies",
+   "\\implies": "implies",
+   "\\Leftarrow": "is implied by",
+   "\\Leftrightarrow": "if and only if",
+   "\\iff": "if and only if",
+   "\\leftrightarrow": "is equivalent to",
+   "\\in": "is in",
+   "\\notin": "is not in",
+   "\\subset": "is a subset of",
+   "\\subseteq": "is a subset of or equal to",
+   "\\supset": "is a superset of",
+   "\\supseteq": "is a superset of or equal to",
+   "\\cup": "union",
+   "\\cap": "intersection",
+   "\\setminus": "minus",
+   "\\emptyset": "the empty set",
+   "\\varnothing": "the empty set",
+   "\\infty": "infinity",
+   "\\forall": "for all",
+   "\\exists": "there exists",
+   "\\neg": "not",
+   "\\lnot": "not",
+   "\\land": "and",
+   "\\wedge": "and",
+   "\\lor": "or",
+   "\\vee": "or",
+   "\\partial": "partial",
+   "\\nabla": "nabla",
+   "\\ldots": "dot dot dot",
+   "\\cdots": "dot dot dot",
+   "\\dots": "dot dot dot",
+   "\\vdots": "dot dot dot",
+   "\\angle": "angle",
+   "\\triangle": "triangle",
+   "\\perp": "is perpendicular to",
+   "\\parallel": "is parallel to",
+   "\\circ": "composed with",
+   "\\ast": "star",
+   "\\star": "star",
+   "\\oplus": "o plus",
+   "\\otimes": "tensor",
+   "\\hbar": "h bar",
+   "\\ell": "ell",
+   "\\mid": "such that",
+   "\\therefore": "therefore",
+   "\\because": "because",
+   "\\bmod": "mod",
+   "\\mod": "mod",
+   "\\%": "percent",
+   "\\$": "dollars",
+   "\\&": "and",
+   "\\#": "number",
+   "\\_": "underscore",
+   "\\degree": "degrees",
+   "\\prime": "prime",
+   "\\langle": "left angle",
+   "\\rangle": "right angle",
+   "/": "over",
+   "*": "times",
+   ":": "colon"
+  },
+  "functions": {
+   "sin": "sine",
+   "cos": "cosine",
+   "tan": "tangent",
+   "cot": "cotangent",
+   "sec": "secant",
+   "csc": "cosecant",
+   "arcsin": "arc sine",
+   "arccos": "arc cosine",
+   "arctan": "arc tangent",
+   "sinh": "hyperbolic sine",
+   "cosh": "hyperbolic cosine",
+   "tanh": "hyperbolic tangent",
+   "log": "log",
+   "ln": "natural log",
+   "lg": "log",
+   "exp": "exp",
+   "max": "max",
+   "min": "min",
+   "sup": "supremum",
+   "inf": "infimum",
+   "det": "determinant",
+   "dim": "dimension",
+   "gcd": "g c d",
+   "lcm": "l c m",
+   "ker": "kernel",
+   "deg": "degree",
+   "arg": "argument",
+   "Pr": "probability",
+   "sgn": "sign"
+  },
+  "phrases": {
+   "frac": "{a} over {b}",
+   "frac_complex": "the fraction {a} over {b}, end fraction",
+   "sqrt": "square root of {x}",
+   "sqrt_complex": "the square root of {x}, end root",
+   "cube_root": "cube root of {x}",
+   "cube_root_complex": "the cube root of {x}, end root",
+   "root": "{ord} root of {x}",
+   "root_complex": "the {ord} root of {x}, end root",
+   "root_general": "{n}th root of {x}",
+   "root_general_complex": "the {n}th root of {x}, end root",
+   "pow": "{b} to the power of {e}",
+   "pow_complex": "{b} to the power of {e}, end power",
+   "sq": "{b} squared",
+   "cube": "{b} cubed",
+   "pow_int": "{b} to the {ord} power",
+   "sub": "{b} sub {i}",
+   "op_sum": "the sum",
+   "op_prod": "the product",
+   "op_int": "the integral",
+   "op_iint": "the double integral",
+   "op_iiint": "the triple integral",
+   "op_oint": "the contour integral",
+   "op_lim": "the limit",
+   "op_bigcup": "the union",
+   "op_bigcap": "the intersection",
+   "bigop": "{op} of",
+   "bigop_lo": "{op} over {lo} of",
+   "bigop_lohi": "{op} from {lo} to {hi} of",
+   "bigop_lim_lo": "{op} as {lo} of",
+   "approaches": "approaches",
+   "log_base": "log base {b}",
+   "fn_lo": "{fn} over {lo}",
+   "of": "{f} of {x}",
+   "binom": "{n} choose {k}",
+   "abs": "absolute value of {x}",
+   "abs_complex": "the absolute value of {x}, end absolute value",
+   "norm": "norm of {x}",
+   "norm_complex": "the norm of {x}, end norm",
+   "factorial": "{x} factorial",
+   "prime": "prime",
+   "double_prime": "double prime",
+   "triple_prime": "triple prime",
+   "vec": "vector {x}",
+   "hat": "{x} hat",
+   "bar": "{x} bar",
+   "dot": "{x} dot",
+   "ddot": "{x} double dot",
+   "tilde": "{x} tilde",
+   "floor": "floor of {x}",
+   "ceil": "ceiling of {x}",
+   "pmod": "mod {x}",
+   "angle": "angle {x}",
+   "set": "the set {x}",
+   "matrix": "the matrix, {rows}, end matrix",
+   "row": "row {i}: {cells}",
+   "cases": "cases: {rows}, end cases",
+   "degrees": "degrees",
+   "open_paren": "open paren",
+   "close_paren": "close paren",
+   "open_bracket": "open bracket",
+   "close_bracket": "close bracket",
+   "open_angle": "open angle",
+   "close_angle": "close angle",
+   "bb_R": "the real numbers",
+   "bb_N": "the natural numbers",
+   "bb_Z": "the integers",
+   "bb_Q": "the rational numbers",
+   "bb_C": "the complex numbers"
+  }
+ }
+}

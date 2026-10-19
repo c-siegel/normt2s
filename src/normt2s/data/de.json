@@ -1,0 +1,622 @@
+{
+ "abbreviations": {
+  "z. B.": "zum Beispiel",
+  "d. h.": "das heißt",
+  "u. a.": "unter anderem",
+  "u. U.": "unter Umständen",
+  "z. T.": "zum Teil",
+  "z. Z.": "zur Zeit",
+  "v. a.": "vor allem",
+  "i. d. R.": "in der Regel",
+  "o. ä.": "oder ähnliches",
+  "u. v. m.": "und vieles mehr",
+  "usw.": "und so weiter",
+  "etc.": {
+   "to": "et cetera",
+   "final": true
+  },
+  "bzw.": "beziehungsweise",
+  "bzgl.": "bezüglich",
+  "ca.": "circa",
+  "ggf.": "gegebenenfalls",
+  "evtl.": "eventuell",
+  "inkl.": "inklusive",
+  "exkl.": "exklusive",
+  "vgl.": "vergleiche",
+  "max.": "maximal",
+  "Dr.": "Doktor",
+  "Prof.": "Professor",
+  "Hr.": "Herr",
+  "Fr.": "Frau",
+  "Nr.": "Nummer",
+  "Abb.": "Abbildung",
+  "Tab.": "Tabelle",
+  "Kap.": "Kapitel",
+  "Mio.": "Millionen",
+  "Mrd.": "Milliarden",
+  "Std.": "Stunden",
+  "24/7": "vierundzwanzig sieben"
+ },
+ "units": {
+  "mm": [
+   "Millimeter",
+   "Millimeter",
+   "m"
+  ],
+  "cm": [
+   "Zentimeter",
+   "Zentimeter",
+   "m"
+  ],
+  "m": [
+   "Meter",
+   "Meter",
+   "m"
+  ],
+  "km": [
+   "Kilometer",
+   "Kilometer",
+   "m"
+  ],
+  "µm": [
+   "Mikrometer",
+   "Mikrometer",
+   "m"
+  ],
+  "nm": [
+   "Nanometer",
+   "Nanometer",
+   "m"
+  ],
+  "mm²": [
+   "Quadratmillimeter",
+   "Quadratmillimeter",
+   "m"
+  ],
+  "cm²": [
+   "Quadratzentimeter",
+   "Quadratzentimeter",
+   "m"
+  ],
+  "m²": [
+   "Quadratmeter",
+   "Quadratmeter",
+   "m"
+  ],
+  "km²": [
+   "Quadratkilometer",
+   "Quadratkilometer",
+   "m"
+  ],
+  "cm³": [
+   "Kubikzentimeter",
+   "Kubikzentimeter",
+   "m"
+  ],
+  "m³": [
+   "Kubikmeter",
+   "Kubikmeter",
+   "m"
+  ],
+  "mg": [
+   "Milligramm",
+   "Milligramm",
+   "n"
+  ],
+  "g": [
+   "Gramm",
+   "Gramm",
+   "n"
+  ],
+  "kg": [
+   "Kilogramm",
+   "Kilogramm",
+   "n"
+  ],
+  "ml": [
+   "Milliliter",
+   "Milliliter",
+   "m"
+  ],
+  "cl": [
+   "Zentiliter",
+   "Zentiliter",
+   "m"
+  ],
+  "l": [
+   "Liter",
+   "Liter",
+   "m"
+  ],
+  "L": [
+   "Liter",
+   "Liter",
+   "m"
+  ],
+  "ns": [
+   "Nanosekunde",
+   "Nanosekunden",
+   "f"
+  ],
+  "µs": [
+   "Mikrosekunde",
+   "Mikrosekunden",
+   "f"
+  ],
+  "ms": [
+   "Millisekunde",
+   "Millisekunden",
+   "f"
+  ],
+  "s": [
+   "Sekunde",
+   "Sekunden",
+   "f"
+  ],
+  "s²": [
+   "Sekunde zum Quadrat",
+   "Sekunden zum Quadrat",
+   "f"
+  ],
+  "min": [
+   "Minute",
+   "Minuten",
+   "f"
+  ],
+  "h": [
+   "Stunde",
+   "Stunden",
+   "f"
+  ],
+  "°C": [
+   "Grad Celsius",
+   "Grad Celsius",
+   "n"
+  ],
+  "°F": [
+   "Grad Fahrenheit",
+   "Grad Fahrenheit",
+   "n"
+  ],
+  "°": [
+   "Grad",
+   "Grad",
+   "n"
+  ],
+  "mph": [
+   "Meile pro Stunde",
+   "Meilen pro Stunde",
+   "f"
+  ],
+  "V": [
+   "Volt",
+   "Volt",
+   "n"
+  ],
+  "mV": [
+   "Millivolt",
+   "Millivolt",
+   "n"
+  ],
+  "kV": [
+   "Kilovolt",
+   "Kilovolt",
+   "n"
+  ],
+  "mA": [
+   "Milliampere",
+   "Milliampere",
+   "n"
+  ],
+  "W": [
+   "Watt",
+   "Watt",
+   "n"
+  ],
+  "kW": [
+   "Kilowatt",
+   "Kilowatt",
+   "n"
+  ],
+  "MW": [
+   "Megawatt",
+   "Megawatt",
+   "n"
+  ],
+  "GW": [
+   "Gigawatt",
+   "Gigawatt",
+   "n"
+  ],
+  "kWh": [
+   "Kilowattstunde",
+   "Kilowattstunden",
+   "f"
+  ],
+  "Hz": [
+   "Hertz",
+   "Hertz",
+   "n"
+  ],
+  "kHz": [
+   "Kilohertz",
+   "Kilohertz",
+   "n"
+  ],
+  "MHz": [
+   "Megahertz",
+   "Megahertz",
+   "n"
+  ],
+  "GHz": [
+   "Gigahertz",
+   "Gigahertz",
+   "n"
+  ],
+  "kJ": [
+   "Kilojoule",
+   "Kilojoule",
+   "n"
+  ],
+  "kcal": [
+   "Kilokalorie",
+   "Kilokalorien",
+   "f"
+  ],
+  "cal": [
+   "Kalorie",
+   "Kalorien",
+   "f"
+  ],
+  "Pa": [
+   "Pascal",
+   "Pascal",
+   "n"
+  ],
+  "kPa": [
+   "Kilopascal",
+   "Kilopascal",
+   "n"
+  ],
+  "bar": [
+   "Bar",
+   "Bar",
+   "n"
+  ],
+  "mol": [
+   "Mol",
+   "Mol",
+   "n"
+  ],
+  "dB": [
+   "Dezibel",
+   "Dezibel",
+   "n"
+  ],
+  "rpm": [
+   "Umdrehung pro Minute",
+   "Umdrehungen pro Minute",
+   "f"
+  ],
+  "px": [
+   "Pixel",
+   "Pixel",
+   "m"
+  ],
+  "kB": [
+   "Kilobyte",
+   "Kilobyte",
+   "n"
+  ],
+  "KB": [
+   "Kilobyte",
+   "Kilobyte",
+   "n"
+  ],
+  "MB": [
+   "Megabyte",
+   "Megabyte",
+   "n"
+  ],
+  "GB": [
+   "Gigabyte",
+   "Gigabyte",
+   "n"
+  ],
+  "TB": [
+   "Terabyte",
+   "Terabyte",
+   "n"
+  ]
+ },
+ "currencies": {
+  "€": {
+   "major": [
+    "Euro",
+    "Euro",
+    "m"
+   ],
+   "minor": [
+    "Cent",
+    "Cent",
+    "m"
+   ]
+  },
+  "$": {
+   "major": [
+    "Dollar",
+    "Dollar",
+    "m"
+   ],
+   "minor": [
+    "Cent",
+    "Cent",
+    "m"
+   ]
+  },
+  "£": {
+   "major": [
+    "Pfund",
+    "Pfund",
+    "n"
+   ],
+   "minor": [
+    "Penny",
+    "Pence",
+    "m"
+   ]
+  },
+  "¥": {
+   "major": [
+    "Yen",
+    "Yen",
+    "m"
+   ]
+  },
+  "EUR": {
+   "major": [
+    "Euro",
+    "Euro",
+    "m"
+   ],
+   "minor": [
+    "Cent",
+    "Cent",
+    "m"
+   ]
+  },
+  "USD": {
+   "major": [
+    "Dollar",
+    "Dollar",
+    "m"
+   ],
+   "minor": [
+    "Cent",
+    "Cent",
+    "m"
+   ]
+  },
+  "CHF": {
+   "major": [
+    "Franken",
+    "Franken",
+    "m"
+   ],
+   "minor": [
+    "Rappen",
+    "Rappen",
+    "m"
+   ]
+  }
+ },
+ "symbols": {
+  "=": "gleich",
+  "+": "plus",
+  "×": "mal",
+  "÷": "geteilt durch",
+  "≠": "ist ungleich",
+  "≤": "ist kleiner oder gleich",
+  "≥": "ist größer oder gleich",
+  "≈": "ist ungefähr gleich",
+  "<": "ist kleiner als",
+  ">": "ist größer als",
+  "±": "plus minus",
+  "−": "minus",
+  "&": "und",
+  "%": "Prozent",
+  "^2": "zum Quadrat",
+  "^3": "hoch drei",
+  "^": "hoch",
+  "²": "zum Quadrat",
+  "³": "hoch drei",
+  "#": "Nummer"
+ },
+ "latex": {
+  "commands": {
+   "\\times": "mal",
+   "\\cdot": "mal",
+   "\\div": "geteilt durch",
+   "\\pm": "plus minus",
+   "\\mp": "minus plus",
+   "\\neq": "ist ungleich",
+   "\\ne": "ist ungleich",
+   "\\leq": "ist kleiner oder gleich",
+   "\\le": "ist kleiner oder gleich",
+   "\\geq": "ist größer oder gleich",
+   "\\ge": "ist größer oder gleich",
+   "\\approx": "ist ungefähr gleich",
+   "\\sim": "ist ähnlich zu",
+   "\\equiv": "ist äquivalent zu",
+   "\\cong": "ist kongruent zu",
+   "\\propto": "ist proportional zu",
+   "\\ll": "ist sehr viel kleiner als",
+   "\\gg": "ist sehr viel größer als",
+   "\\to": "nach",
+   "\\rightarrow": "nach",
+   "\\leftarrow": "von",
+   "\\mapsto": "wird abgebildet auf",
+   "\\Rightarrow": "daraus folgt",
+   "\\implies": "daraus folgt",
+   "\\Leftarrow": "folgt aus",
+   "\\Leftrightarrow": "genau dann, wenn",
+   "\\iff": "genau dann, wenn",
+   "\\leftrightarrow": "ist äquivalent zu",
+   "\\in": "ist Element von",
+   "\\notin": "ist nicht Element von",
+   "\\subset": "ist Teilmenge von",
+   "\\subseteq": "ist Teilmenge oder gleich",
+   "\\supset": "ist Obermenge von",
+   "\\supseteq": "ist Obermenge oder gleich",
+   "\\cup": "vereinigt mit",
+   "\\cap": "geschnitten mit",
+   "\\setminus": "ohne",
+   "\\emptyset": "die leere Menge",
+   "\\varnothing": "die leere Menge",
+   "\\infty": "unendlich",
+   "\\forall": "für alle",
+   "\\exists": "es existiert",
+   "\\neg": "nicht",
+   "\\lnot": "nicht",
+   "\\land": "und",
+   "\\wedge": "und",
+   "\\lor": "oder",
+   "\\vee": "oder",
+   "\\partial": "partiell",
+   "\\nabla": "Nabla",
+   "\\ldots": "Punkt Punkt Punkt",
+   "\\cdots": "Punkt Punkt Punkt",
+   "\\dots": "Punkt Punkt Punkt",
+   "\\vdots": "Punkt Punkt Punkt",
+   "\\angle": "Winkel",
+   "\\triangle": "Dreieck",
+   "\\perp": "steht senkrecht auf",
+   "\\parallel": "ist parallel zu",
+   "\\circ": "verkettet mit",
+   "\\ast": "Stern",
+   "\\star": "Stern",
+   "\\oplus": "o plus",
+   "\\otimes": "Tensor",
+   "\\hbar": "h quer",
+   "\\ell": "ell",
+   "\\mid": "für die gilt",
+   "\\therefore": "also",
+   "\\because": "weil",
+   "\\bmod": "modulo",
+   "\\mod": "modulo",
+   "\\%": "Prozent",
+   "\\$": "Dollar",
+   "\\&": "und",
+   "\\#": "Nummer",
+   "\\_": "Unterstrich",
+   "\\degree": "Grad",
+   "\\prime": "Strich",
+   "\\langle": "spitze Klammer auf",
+   "\\rangle": "spitze Klammer zu",
+   "/": "durch",
+   "*": "mal",
+   ":": "Doppelpunkt"
+  },
+  "functions": {
+   "sin": "Sinus",
+   "cos": "Kosinus",
+   "tan": "Tangens",
+   "cot": "Kotangens",
+   "sec": "Sekans",
+   "csc": "Kosekans",
+   "arcsin": "Arkussinus",
+   "arccos": "Arkuskosinus",
+   "arctan": "Arkustangens",
+   "sinh": "Sinus hyperbolicus",
+   "cosh": "Kosinus hyperbolicus",
+   "tanh": "Tangens hyperbolicus",
+   "log": "Logarithmus",
+   "ln": "natürlicher Logarithmus",
+   "lg": "Logarithmus",
+   "exp": "Exponentialfunktion",
+   "max": "Maximum",
+   "min": "Minimum",
+   "sup": "Supremum",
+   "inf": "Infimum",
+   "det": "Determinante",
+   "dim": "Dimension",
+   "gcd": "g g T",
+   "lcm": "k g V",
+   "ker": "Kern",
+   "deg": "Grad",
+   "arg": "Argument",
+   "Pr": "Wahrscheinlichkeit",
+   "sgn": "Signum"
+  },
+  "phrases": {
+   "frac": "{a} durch {b}",
+   "frac_complex": "der Bruch {a} durch {b}, Ende Bruch",
+   "sqrt": "Wurzel aus {x}",
+   "sqrt_complex": "die Wurzel aus {x}, Ende Wurzel",
+   "cube_root": "dritte Wurzel aus {x}",
+   "cube_root_complex": "die dritte Wurzel aus {x}, Ende Wurzel",
+   "root": "{ord} Wurzel aus {x}",
+   "root_complex": "die {ord} Wurzel aus {x}, Ende Wurzel",
+   "root_general": "{n}-te Wurzel aus {x}",
+   "root_general_complex": "die {n}-te Wurzel aus {x}, Ende Wurzel",
+   "pow": "{b} hoch {e}",
+   "pow_complex": "{b} hoch {e}, Ende Hochzahl",
+   "sq": "{b} zum Quadrat",
+   "cube": "{b} hoch drei",
+   "pow_int": "{b} hoch {card}",
+   "sub": "{b} Index {i}",
+   "op_sum": "die Summe",
+   "op_prod": "das Produkt",
+   "op_int": "das Integral",
+   "op_iint": "das Doppelintegral",
+   "op_iiint": "das Dreifachintegral",
+   "op_oint": "das Kurvenintegral",
+   "op_lim": "der Limes",
+   "op_bigcup": "die Vereinigung",
+   "op_bigcap": "der Durchschnitt",
+   "bigop": "{op} über",
+   "bigop_lo": "{op} über {lo}, über",
+   "bigop_lohi": "{op} von {lo} bis {hi} über",
+   "bigop_lim_lo": "{op} für {lo} von",
+   "approaches": "gegen",
+   "log_base": "Logarithmus zur Basis {b}",
+   "fn_lo": "{fn} über {lo}",
+   "of": "{f} von {x}",
+   "binom": "{n} über {k}",
+   "abs": "Betrag von {x}",
+   "abs_complex": "der Betrag von {x}, Ende Betrag",
+   "norm": "Norm von {x}",
+   "norm_complex": "die Norm von {x}, Ende Norm",
+   "factorial": "{x} Fakultät",
+   "prime": "Strich",
+   "double_prime": "zwei Striche",
+   "triple_prime": "drei Striche",
+   "vec": "Vektor {x}",
+   "hat": "{x} Dach",
+   "bar": "{x} quer",
+   "dot": "{x} Punkt",
+   "ddot": "{x} zwei Punkte",
+   "tilde": "{x} Tilde",
+   "floor": "untere Gaußklammer von {x}",
+   "ceil": "obere Gaußklammer von {x}",
+   "pmod": "modulo {x}",
+   "angle": "spitze Klammer {x}",
+   "set": "die Menge {x}",
+   "matrix": "die Matrix, {rows}, Ende Matrix",
+   "row": "Zeile {i}: {cells}",
+   "cases": "Fallunterscheidung: {rows}, Ende Fallunterscheidung",
+   "degrees": "Grad",
+   "open_paren": "Klammer auf",
+   "close_paren": "Klammer zu",
+   "open_bracket": "eckige Klammer auf",
+   "close_bracket": "eckige Klammer zu",
+   "open_angle": "spitze Klammer auf",
+   "close_angle": "spitze Klammer zu",
+   "bb_R": "den reellen Zahlen",
+   "bb_N": "den natürlichen Zahlen",
+   "bb_Z": "den ganzen Zahlen",
+   "bb_Q": "den rationalen Zahlen",
+   "bb_C": "den komplexen Zahlen"
+  }
+ }
+}

@@ -1,0 +1,371 @@
+"""Single-pass, regex-driven normalizer.
+
+Pipeline per unprotected segment:  abbreviations -> pre-symbols -> numbers/units -> post-symbols.
+Regexes are compiled lazily and recompiled only when the lexicon changes.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Iterable, Iterator, Optional, Sequence, Union
+
+from .langs import Language, get_language
+from .latex import LatexSpeaker
+from .lexicon import Lexicon
+
+_PROTECT = (
+    r"(?s:```.*?```)"
+    r"|`[^`\n]+`"
+    r"|\]\([^)\s]*\)"
+    r"|https?://[^\s<>\"]*[^\s<>\".,;:!?)\]]"
+    r"|www\.[^\s<>\"]*[^\s<>\".,;:!?)\]]"
+    r"|[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
+    r"|</?[A-Za-z][^<>\n]*>"
+)
+# pandoc rule for single dollars: "$x^2$" is math, "$5 and $6" is not
+_MATH = (
+    r"(?s:\$\$(?P<m1>.*?)\$\$)"
+    r"|(?s:\\\[(?P<m2>.*?)\\\])"
+    r"|(?s:\\\((?P<m3>.*?)\\\))"
+    r"|(?<![\w$])\$(?![\s$])(?P<m4>[^$\n]*?)(?<![\s\\])\$(?!\d)"
+)
+# Code, URLs, e-mail addresses, HTML tags and link targets: never touched.
+PROTECT_RE = re.compile(_PROTECT)
+# The above plus LaTeX math spans (spoken or kept, see ``Normalizer(latex=...)``).
+SPAN_RE = re.compile(_PROTECT + "|" + _MATH)
+
+_DIGIT_RE = re.compile(r"\d")
+_MAX_INT_DIGITS = 15
+_NBSP = "\u00a0\u202f"
+
+
+class Normalizer:
+    """Turn written text into text that is safe to hand to a TTS engine.
+
+    >>> Normalizer("en").normalize("It costs $3.50 for 2 kg, e.g. in 1984.")
+    'It costs three dollars and fifty cents for two kilograms, for example in nineteen eighty-four.'
+    """
+
+    def __init__(self, lang: Union[str, Language] = "en", lexicon: Optional[Lexicon] = None,
+                 latex: str = "speak"):
+        """``latex="speak"`` reads math aloud, ``latex="keep"`` leaves LaTeX spans untouched."""
+        if latex not in ("speak", "keep"):
+            raise ValueError("latex must be 'speak' or 'keep'")
+        self.lang = get_language(lang) if isinstance(lang, str) else lang
+        self.lexicon = lexicon or Lexicon.builtin(self.lang)
+        self._latex = LatexSpeaker(self) if latex == "speak" else None
+        self._compiled = -1
+
+    # ------------------------------------------------------------ dictionary API
+    def add_abbreviation(self, key: str, to: str, **kw) -> "Normalizer":
+        self.lexicon.add_abbreviation(key, to, **kw)
+        return self
+
+    def add_unit(self, symbol: str, singular: str, plural: Optional[str] = None,
+                 gender: Optional[str] = None) -> "Normalizer":
+        self.lexicon.add_unit(symbol, singular, plural, gender)
+        return self
+
+    def add_currency(self, symbol: str, major: Sequence, minor: Optional[Sequence] = None):
+        self.lexicon.add_currency(symbol, major, minor)
+        return self
+
+    def add_symbol(self, key: str, word: str) -> "Normalizer":
+        self.lexicon.add_symbol(key, word)
+        return self
+
+    def load_lexicon(self, path: Union[str, Path]) -> "Normalizer":
+        self.lexicon.load(path)
+        return self
+
+    # --------------------------------------------------------------- public API
+    def normalize(self, text: str) -> str:
+        if not text:
+            return text
+        self.ensure_compiled()
+        out = []
+        pos = 0
+        for m in SPAN_RE.finditer(text):
+            if m.start() > pos:
+                out.append(self._plain(text[pos:m.start()]))
+            spoken = None
+            if self._latex is not None and m.lastgroup in ("m1", "m2", "m3", "m4"):
+                spoken = self._latex.speak(m.group(m.lastgroup))
+            out.append(m.group() if spoken is None else spoken)
+            pos = m.end()
+        if pos == 0:
+            return self._plain(text)
+        if pos < len(text):
+            out.append(self._plain(text[pos:]))
+        return "".join(out)
+
+    __call__ = normalize
+
+    def stream(self, max_buffer: int = 400):
+        """A stateful wrapper for token-by-token LLM output, see :class:`StreamNormalizer`."""
+        from .stream import StreamNormalizer
+
+        return StreamNormalizer(self, max_buffer)
+
+    def normalize_stream(self, chunks: Iterable[str], max_buffer: int = 400) -> Iterator[str]:
+        s = self.stream(max_buffer)
+        for chunk in chunks:
+            out = s.feed(chunk)
+            if out:
+                yield out
+        out = s.flush()
+        if out:
+            yield out
+
+    # ------------------------------------------------------------- compilation
+    def ensure_compiled(self) -> None:
+        if self._compiled != self.lexicon.version:
+            self._compile()
+
+    def _compile(self) -> None:
+        lang, lex = self.lang, self.lexicon
+        esc = re.escape
+
+        # abbreviations: whitespace inside keys is optional ("z. B." matches "z.B.")
+        self._abbr = {re.sub(r"\s+", "", k): v for k, v in lex.abbreviations.items()}
+        keys = sorted(lex.abbreviations, key=len, reverse=True)
+        self._abbr_re = re.compile(
+            r"(?<![\w.])(?:" + "|".join(r"\s*".join(esc(p) for p in k.split()) for k in keys)
+            + r")(?!\w)") if keys else None
+        # tokens after which a "." does NOT end a sentence (used by the stream splitter)
+        self.no_boundary_tokens = set()
+        for k in keys:
+            toks = k.split()
+            self.no_boundary_tokens.update(toks[:-1])
+            if toks[-1].endswith("."):
+                self.no_boundary_tokens.add(toks[-1])
+
+        # symbols that need digit context are handled before the number pass
+        sym = lex.symbols
+        self._sym = sym
+        self._pre_re = re.compile(
+            r"(?<=\d) [-−] (?=\d)"        # 5 - 3
+            r"|\^(?P<exp>-?\w+)"           # x^2
+            r"|#(?=\d)"                    # #5
+            r"|(?<![\w+])\+(?=\d)"         # +49
+        )
+        self._post_re = re.compile(
+            r"(?P<sq>(?<=[\w)\]])[²³])"
+            + (r"|\s?(?P<op>[" + "".join(esc(c) for c in "×÷≠≤≥≈±−" if c in sym) + r"])\s?"
+               if any(c in sym for c in "×÷≠≤≥≈±−") else "")
+            + r"|(?<=[\w)\]])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£-])"
+            r"|(?<=\S) (?P<cmp>[<>]) (?=\S)"
+            r"|(?<=\s)(?P<amp>&)(?=\s)"
+        )
+
+        # numbers
+        ts, ds = esc(lang.thousands_sep), esc(lang.decimal_sep)
+        guard = r"(?!\.\d)" if lang.decimal_sep == "." else ""
+        thous = rf"\d{{1,3}}(?:{ts}\d{{3}})+(?!\d)(?:{ds}\d+)?"
+        ver = r"\d+(?:\.\d+){2,}"
+        plain = rf"\d+(?:{ds}\d+)?{guard}"
+        cur_chars = "".join(esc(c) for c in lex.currencies if len(c) == 1)
+        cur_pre = rf"(?:(?P<cur>[{cur_chars}])\s?)?" if cur_chars else ""
+        self._token_re = re.compile(
+            r"(?<![\w.])" + (rf"(?P<neg0>[-−](?=[{cur_chars}]))?" if cur_chars else "")
+            + cur_pre + r"(?P<neg>[-−](?=\d))?"
+            r"(?:(?P<frac>\d{1,3}/\d{1,3})(?![\w/]|\.\d)"
+            r"|(?P<time>(?P<hh>\d{1,2}):(?P<mm>[0-5]\d))(?![\d:])"
+            rf"|(?P<num>(?P<th>{thous})|(?P<ver>{ver})|{plain}))"
+        )
+
+        # what may follow a number
+        syms = sorted(lex.units, key=len, reverse=True)
+        free = "|".join(esc(s) for s in syms if not (len(s) == 1 and s.isupper()))
+        attached = "|".join(esc(s) for s in syms if len(s) == 1 and s.isupper())
+        every = "|".join(esc(s) for s in syms)
+        alts = [r"(?P<pct>\s?%)"]
+        if lang.ordinal_suffix:
+            alts.append(rf"(?P<ord>(?:{lang.ordinal_suffix})(?![A-Za-z]))")
+        if lang.decade_suffix:
+            alts.append(rf"(?P<dec>{lang.decade_suffix}(?![A-Za-z]))")
+        alts.append(r"(?P<ampm>\s?(?:[ap]\.?m\.?|[AP]M)(?![A-Za-z]))")
+        cur_all = "|".join(esc(c) for c in sorted(lex.currencies, key=len, reverse=True))
+        if cur_all:
+            alts.append(rf"(?P<csuf>\s?(?P<csym>{cur_all})(?![\w]))")
+        alts.append(
+            rf"(?P<unit>(?:[ {_NBSP}]?(?P<uf>{free or '(?!)'})|(?P<ua>{attached or '(?!)'}))"
+            rf"(?:/(?P<den>{every or '(?!)'}))?(?![\w]))"
+        )
+        self._suffix_re = re.compile("|".join(alts))
+        self._scale_re = re.compile(
+            r"\s(?P<scale>" + "|".join(lang.scale_words) + r")(?![A-Za-z])", re.I
+        ) if lang.scale_words else None
+        self._year_re = re.compile(
+            r"(?:^|[\s(])(?:" + "|".join(esc(p) for p in lang.year_prepositions) + r")\s+$", re.I
+        ) if lang.year_prepositions else None
+        self._range_re = re.compile(r"(?<=\d)\s?–\s?(?=\d)")
+        self._date_re = re.compile(lang.date_regex) if lang.date_regex else None
+        self._compiled = lex.version
+
+    # ---------------------------------------------------------------- pipeline
+    def _plain(self, text: str) -> str:
+        if self._abbr_re:
+            text = self._abbr_re.sub(self._abbr_sub, text)
+        has_digit = _DIGIT_RE.search(text) is not None
+        if has_digit and self._date_re:
+            text = self._date_re.sub(self._date_sub, text)
+        text = self._pre_re.sub(self._pre_sub, text)
+        if has_digit:
+            text = self._range_re.sub(f" {self.lang.range_word} ", text)
+            text = self._numbers(text)
+        return self._post_re.sub(self._post_sub, text)
+
+    def _abbr_sub(self, m: "re.Match[str]") -> str:
+        entry = self._abbr[re.sub(r"\s+", "", m.group())]
+        text, end = m.string, m.end()
+        if entry.to and m.group().endswith("."):
+            nxt = text[end:end + 3]
+            if end == len(text) or nxt[:1] == "\n" or (
+                    entry.final and nxt[:1].isspace() and nxt.lstrip()[:1].isupper()):
+                return entry.to + "."
+        return entry.to
+
+    def _date_sub(self, m: "re.Match[str]") -> str:
+        before = m.string[max(0, m.start() - 12):m.start()]
+        return self.lang.format_date(m, before) or m.group()
+
+    def _pre_sub(self, m: "re.Match[str]") -> str:
+        s, g = self._sym, m.group()
+        if g[0] == "^":
+            exp = m.group("exp")
+            if exp == "2" and "^2" in s:
+                return " " + s["^2"]
+            if exp == "3" and "^3" in s:
+                return " " + s["^3"]
+            return f" {s['^']} {exp}" if "^" in s else g
+        if g == "#":
+            return s["#"] + " " if "#" in s else g
+        if g == "+":
+            return s["+"] + " " if "+" in s else g
+        return f" {s['−']} " if "−" in s else g
+
+    def _post_sub(self, m: "re.Match[str]") -> str:
+        s = self._sym
+        if m.group("sq"):
+            return " " + s[m.group("sq")]
+        for name in ("op", "eq", "cmp", "amp"):
+            if name in m.re.groupindex and m.group(name):
+                word = s.get(m.group(name))
+                if not word:
+                    return m.group()
+                return word if name == "amp" else f" {word} "
+        return m.group()
+
+    # ------------------------------------------------------------------ numbers
+    def _numbers(self, text: str) -> str:
+        out = []
+        pos = 0
+        search = self._token_re.search
+        while True:
+            m = search(text, pos)
+            if not m:
+                break
+            words, end = self._render(m, text)
+            out.append(text[pos:m.start()])
+            out.append(words)
+            pos = end
+        out.append(text[pos:])
+        return "".join(out)
+
+    def _words(self, intpart: str, frac: Optional[str], neg: bool, gender: Optional[str] = None) -> str:
+        lang = self.lang
+        if (len(intpart) > 1 and intpart[0] == "0") or len(intpart) > _MAX_INT_DIGITS:
+            words = lang.digits(intpart)
+        else:
+            words = lang.cardinal(int(intpart), gender)
+        if frac is not None:
+            words += f" {lang.point} {lang.digits(frac)}"
+        return f"{lang.minus} {words}" if neg else words
+
+    def _render(self, m: "re.Match[str]", text: str):
+        lang, lex = self.lang, self.lexicon
+        neg = m.group("neg") is not None or ("neg0" in m.re.groupindex and m.group("neg0") is not None)
+        end = m.end()
+
+        if m.group("frac"):
+            a, b = m.group("frac").split("/")
+            words = lang.fraction(int(a), int(b))
+            return (f"{lang.minus} {words}" if neg else words), end
+
+        if m.group("time"):
+            hh, mm = int(m.group("hh")), int(m.group("mm"))
+            suffix = None
+            sm = self._suffix_re.match(text, end)
+            if sm and sm.group("ampm") and 1 <= hh <= 12:
+                suffix, end = sm.group("ampm").strip(), sm.end()
+            if hh < 24:
+                return lang.time(hh, mm, suffix), end
+            return f"{self.lang.cardinal(hh)} {self.lang.cardinal(mm)}", end
+
+        raw = m.group("num")
+        if m.group("ver"):
+            return f" {lang.point} ".join(self._words(p, None, False) for p in raw.split(".")), end
+        if m.group("th"):
+            raw = raw.replace(lang.thousands_sep, "")
+        if lang.decimal_sep != ".":
+            raw = raw.replace(lang.decimal_sep, ".")
+        intpart, sep, frac = raw.partition(".")
+        frac = frac if sep else None
+        one = frac is None and int(intpart) == 1 if len(intpart) <= _MAX_INT_DIGITS else False
+
+        # prefix currency: "$5", "€3,50", "$5 million"
+        cur_sym = m.group("cur") if "cur" in m.re.groupindex else None
+        if cur_sym:
+            scale = self._scale_re.match(text, end) if self._scale_re else None
+            if scale:
+                cur = lex.currencies[cur_sym]
+                words = f"{self._words(intpart, frac, neg)} {scale.group('scale')} {cur.major.plural}"
+                return words, scale.end()
+            return self._currency(cur_sym, intpart, frac, neg), end
+
+        sm = self._suffix_re.match(text, end)
+        if sm:
+            kind = sm.lastgroup
+            if kind == "pct":
+                return f"{self._words(intpart, frac, neg)} {lang.percent}", sm.end()
+            if kind == "csuf" or kind == "csym":
+                return self._currency(sm.group("csym"), intpart, frac, neg), sm.end()
+            if kind == "ord" and frac is None and not neg and len(intpart) <= _MAX_INT_DIGITS:
+                return lang.ordinal(int(intpart)), sm.end()
+            if kind == "dec" and frac is None and not neg and len(intpart) == 4 \
+                    and 1000 <= int(intpart) <= 2090 and intpart[-1] == "0":
+                return lang.decade(int(intpart)), sm.end()
+            if kind == "ampm" and frac is None and 1 <= int(intpart) <= 12 and not neg:
+                return lang.time(int(intpart), 0, sm.group("ampm").strip()), sm.end()
+            if kind in ("unit", "uf", "ua", "den"):
+                sym = sm.group("uf") or sm.group("ua")
+                if sym:
+                    form = lex.units[sym]
+                    words = f"{self._words(intpart, frac, neg, form.gender)} {form.pick(one)}"
+                    if sm.group("den"):
+                        words += f" {lang.per_word} {lex.units[sm.group('den')].singular}"
+                    return words, sm.end()
+
+        # plain number; maybe a year
+        if (frac is None and not neg and len(intpart) == 4 and 1100 <= int(intpart) <= 2099
+                and self._year_re and self._year_re.search(text[max(0, m.start() - 20):m.start()])):
+            words = lang.year(int(intpart))
+        else:
+            words = self._words(intpart, frac, neg)
+        # "3D" -> "three D", but keep "5s" -> "fives"
+        if end < len(text) and text[end].isalpha():
+            if not (text[end] == "s" and not text[end + 1:end + 2].isalpha()):
+                words += " "
+        return words, end
+
+    def _currency(self, symbol: str, intpart: str, frac: Optional[str], neg: bool) -> str:
+        cur = self.lexicon.currencies[symbol]
+        lang = self.lang
+        if len(intpart) > _MAX_INT_DIGITS or (frac is not None and (len(frac) > 2 or not cur.minor)):
+            words = f"{self._words(intpart, frac, False)} {cur.major.plural}"
+        else:
+            minor = int(frac.ljust(2, "0")) if frac else None
+            words = lang.currency(int(intpart), minor, cur)
+        return f"{lang.minus} {words}" if neg else words
