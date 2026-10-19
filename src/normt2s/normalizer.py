@@ -12,16 +12,18 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, NamedTuple, Optional, Sequence, Union
 
 from .langs import Language, get_language
+from . import markdown as _md
 from .latex import LatexSpeaker, find_bare
 from .lexicon import Lexicon
 
 _PROTECT = (
     r"(?s:```.*?```)"
     r"|`[^`\n]+`"
+    r"|\d+"
     r"|\]\([^)\s]*\)"
     r"|https?://[^\s<>\"]*[^\s<>\".,;:!?)\]]"
     r"|www\.[^\s<>\"]*[^\s<>\".,;:!?)\]]"
-    r"|[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
+    r"|(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+"
     r"|</?[A-Za-z][^<>\n]*>"
 )
 # pandoc rule for single dollars: "$x^2$" is math, "$5 and $6" is not
@@ -77,16 +79,22 @@ class Normalizer:
     """
 
     def __init__(self, lang: Union[str, Language] = "en", lexicon: Optional[Lexicon] = None,
-                 latex: str = "speak", latex_bare: str = "protect"):
+                 latex: str = "speak", latex_bare: str = "protect", markdown: str = "keep"):
         """``latex="speak"`` reads math aloud, ``latex="keep"`` leaves LaTeX spans untouched.
 
-        ``latex_bare`` is about LaTeX outside math delimiters (``a \cdot b``): ``"protect"``
+        ``latex_bare`` is about LaTeX outside math delimiters (``a \\cdot b``): ``"protect"``
         leaves it untouched, ``"speak"`` reads it like delimited math.
+
+        ``markdown="strip"`` removes Markdown markers (``**``, ``#``, list bullets, links, ...)
+        before normalizing; ``"keep"`` (default) leaves the text as it is.
         """
         if latex not in ("speak", "keep"):
             raise ValueError("latex must be 'speak' or 'keep'")
         if latex_bare not in ("protect", "speak"):
             raise ValueError("latex_bare must be 'protect' or 'speak'")
+        if markdown not in ("keep", "strip"):
+            raise ValueError("markdown must be 'keep' or 'strip'")
+        self._markdown = markdown == "strip"
         self._bare_speak = latex_bare == "speak"
         self.lang = get_language(lang) if isinstance(lang, str) else lang
         self.lexicon = lexicon or Lexicon.builtin(self.lang)
@@ -126,9 +134,15 @@ class Normalizer:
         return self
 
     # --------------------------------------------------------------- public API
-    def normalize(self, text: str) -> str:
+    def normalize(self, text: str, *, _mid_line: bool = False) -> str:
         if not text:
             return text
+        if not self._markdown:
+            return self._run(text)
+        text, verbatim = _md.strip(text, SPAN_RE, _mid_line)
+        return _md.restore(self._run(text), verbatim)
+
+    def _run(self, text: str) -> str:
         c = self.ensure_compiled()
         out = []
         pos = 0

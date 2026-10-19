@@ -210,6 +210,35 @@ The built-in data uses exactly this format: see [src/normt2s/data/en.json](src/n
 and [de.json](src/normt2s/data/de.json). A unit entry is `[singular, plural, gender]`, where the
 plural and gender are optional and the gender (`"m"`, `"f"`, `"n"`) only matters in German.
 
+## Markdown
+
+LLM replies are usually Markdown, and read aloud `**`, `#` or `[text](url)` are noise. Opt in with
+`markdown="strip"`:
+
+```python
+n = Normalizer("en", markdown="strip")
+n.normalize("## Plan\n- **Walk** 3*4 km, see [the map](https://example.com/a_b)")
+# 'Plan\nWalk three times four kilometers, see the map'
+```
+
+| Construct | Input | Spoken text |
+|---|---|---|
+| Bold, italic, strike-through | `**a**`, `__a__`, `*a*`, `_a_`, `~~a~~` | `a` (italics only if the content has a letter) |
+| Heading, quote | `## Title`, `> text` | `Title`, `text` |
+| Lists | `- item`, `* item`, `+ item`, `1. item`, `1) item` | `item` |
+| Rule | `---`, `***`, `___`, `* * *` (own line) | empty line |
+| Link, image | `[text](url)`, `![alt](url)` | `text`, `alt` |
+| Inline code | `` `x = 1` `` | `x = 1`, kept verbatim |
+| Fenced code | ```` ```python\ncode\n``` ```` | `code`, kept verbatim, the language label is dropped |
+
+Code, URLs, e-mail addresses, HTML and math are masked before the markers are removed, so
+`snake_case_name`, `` `a*b*c` `` and `$a_1 * b_1$` are safe, and `3*4*5` is not mistaken for
+emphasis. In a stream, an unclosed `**`, `__`, `~~`, `*x`, `_x` or `[text](` is held back until
+it is closed or the line ends, and a cut never falls inside a complete emphasis or link.
+
+Not handled: tables, footnotes and reference-style links (`[text][ref]`). A line starting with a
+number and a dot (`3. Mai war schön`) is a list item in Markdown and loses the number.
+
 ## Math (LaTeX)
 
 Math in `$...$`, `$$...$$`, `\(...\)` and `\[...\]` is read aloud:
@@ -296,7 +325,7 @@ The trade-off: speech starts at the end of the first sentence, not at the first 
 ## Reference: options and API
 
 ```python
-Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect")
+Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect", markdown="keep")
 ```
 
 | Argument | Meaning |
@@ -305,6 +334,7 @@ Normalizer(lang="en", lexicon=None, latex="speak", latex_bare="protect")
 | `lexicon` | a `Lexicon` to use instead of the built-in data |
 | `latex` | `"speak"` (default) reads math aloud, `"keep"` leaves it untouched |
 | `latex_bare` | LaTeX outside math delimiters: `"protect"` (default) keeps it, `"speak"` reads it |
+| `markdown` | `"keep"` (default) or `"strip"` to remove Markdown markers before normalizing |
 
 | Call | What it does |
 |---|---|
@@ -341,6 +371,7 @@ src/normt2s/
   normalizer.py    the pipeline above (start reading here)
   lexicon.py       the editable dictionaries and how they are loaded
   stream.py        buffering for streamed text
+  markdown.py      Markdown marker stripping
   latex.py         LaTeX tokenizer, parser and speaker
   langs/           per-language rules: number words, times, dates, fractions
   data/            en.json, de.json: abbreviations, units, currencies, symbols, math vocabulary

@@ -16,3 +16,5 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
   (`\frac{1}{2}` stays). New option `latex_bare="speak"` reads it aloud.
 - **Output change (F4):** built-in formulas are spelled (`H2O` -> "H two O"), isotopes `U-235` ->
   "U two hundred thirty-five". New lexicon list `spelled`, `add_spelled`, `data/elements.json`.
+- **New (F2):** `markdown="strip"` removes Markdown markers (off by default). Streams hold back
+  unclosed markers. The e-mail pattern no longer takes quadratic time on long runs of `_`.
