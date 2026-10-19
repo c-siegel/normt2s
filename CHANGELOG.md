@@ -2,7 +2,7 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
-## Unreleased (0.3.0)
+## 0.3.0
 
 - **New (F10):** `add_protected(pattern, spoken=None, opener=None)` and a `protected` list in lexicon files.
   Matches are kept, replaced or removed, and streams never cut inside them.

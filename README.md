@@ -573,7 +573,7 @@ python benchmarks/bench.py
 ```
 
 Before 1.0, a minor release may change spoken output and a patch release never does, so pin
-`normt2s>=0.2,<0.3`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
+`normt2s>=0.3,<0.4`. Every change of output is listed in [CHANGELOG.md](CHANGELOG.md); the golden
 files in `tests/golden/` list typical inputs and their output per language.
 The hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`, `$`, `\`,
 `` ` ``, `[` and `::`.
