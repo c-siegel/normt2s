@@ -52,6 +52,10 @@ class Language:
     def fraction(self, num: int, den: int) -> str:
         raise NotImplementedError
 
+    def mixed_fraction(self, whole: int, num: int, den: int) -> str:
+        """``1½``: a whole number and a fraction."""
+        return f"{self.cardinal(whole)} {self.fraction(num, den)}"
+
     def format_date(self, m, before: str) -> Optional[str]:
         """Spoken form of a ``date_regex`` match, or None to leave the text alone.
 

@@ -54,6 +54,7 @@ class _Compiled(NamedTuple):
     pre_re: Any
     dot_re: Any
     post_re: Any
+    let_re: Any
     token_re: Any
     suffix_re: Any
     scale_re: Any
@@ -69,6 +70,12 @@ class _Compiled(NamedTuple):
     protected: Any
     openers: Any
 
+
+# vulgar fractions, alone or after a whole number: "½", "1½", "2 ¾"
+_VULGAR = {"½": (1, 2), "¼": (1, 4), "¾": (3, 4)}
+_VULGAR_RE = re.compile(r"(?<![\d.,])(?:(\d{1,6}) ?)?([½¼¾])")
+# Greek letters (and µ) next to another one form a Greek word, which is left alone
+_GREEK = "\u0370-\u03FF\u1F00-\u1FFFµ"
 
 # Rule output is parked behind placeholders (no digits, no word characters) during the pipeline.
 _RULE_PH = re.compile("\uE002([\uE100-\uE1FF]+)\uE003")
@@ -101,7 +108,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 22))
+_EMPTY = _Compiled(-1, *([None] * 23))
 
 
 class Normalizer:
@@ -336,6 +343,16 @@ class Normalizer:
         handled = "-^#%=+<>&²³"
         chars = [k for k in sym if len(k) == 1 and not k.isalnum() and k not in handled]
         multi = sorted((k for k in sym if len(k) > 1 and k[0] != "^"), key=len, reverse=True)
+        # letters (Greek, ℏ): "Δt" is "Delta t"; µ only when no letter follows ("µm" is a unit)
+        alpha = [k for k in sym if len(k) == 1 and k.isalpha()]
+        greek = "".join(esc(k) for k in alpha if re.match(f"[{_GREEK}]", k) and k not in "µμ")
+        micro = "".join(esc(k) for k in alpha if k in "µμ")
+        other = "".join(esc(k) for k in alpha if not re.match(f"[{_GREEK}]", k))
+        # the letter comes first so the lookarounds only run on a match: (?<![Greek].) checks the
+        # character before it
+        let_alts = ([rf"[{greek}](?<![{_GREEK}].)(?![{_GREEK}])"] if greek else []) \
+            + ([rf"[{micro}](?<![{_GREEK}].)(?![{_GREEK}]|[^\W\d_])"] if micro else []) \
+            + ([f"[{other}]"] if other else [])
         post_re = re.compile(
             r"(?P<sq>(?<=[\w)\]])[²³])"
             + (r"|\s?(?P<mop>" + "|".join(esc(k) for k in multi) + r")\s?" if multi else "")
@@ -345,6 +362,8 @@ class Normalizer:
             r"|(?<=\S) (?P<cmp>[<>]) (?=\S)"
             r"|(?<=\s)(?P<amp>&)(?=\s)"
         )
+        # its own regex, run only on non-ASCII text: as a branch of post_re it slowed every position
+        let_re = re.compile("|".join(let_alts)) if let_alts else None
 
         # numbers
         ts, ds = esc(lang.thousands_sep), esc(lang.decimal_sep)
@@ -408,8 +427,8 @@ class Normalizer:
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
         ord_dot_re = re.compile(lang.ordinal_dot_regex) if lang.ordinal_dot_regex else None
         return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, dot_re, post_re,
-                         token_re, suffix_re, scale_re, year_re, range_re, date_re, ord_dot_re,
-                         punct_re, dict(lex.punctuation),
+                         let_re, token_re, suffix_re, scale_re, year_re, range_re, date_re,
+                         ord_dot_re, punct_re, dict(lex.punctuation),
                          spelled_re, iso_re, span_re, tuple(spoken for spoken, _ in lex.protected.values()),
                          tuple(op for _, op in lex.protected.values() if op))
 
@@ -436,6 +455,8 @@ class Normalizer:
             text = c.date_re.sub(self._date_sub, text)
         if has_digit and c.ord_dot_re:
             text = c.ord_dot_re.sub(self.lang.format_ordinal_dot, text)
+        if "½" in text or "¼" in text or "¾" in text:
+            text = _VULGAR_RE.sub(self._vulgar_sub, text)
         if c.dot_re is not None and "·" in text:
             text = c.dot_re.sub(f" {c.ops['·']} ", text)
         text = c.pre_re.sub(lambda m: self._pre_sub(m, c), text)
@@ -444,7 +465,10 @@ class Normalizer:
             text = self._numbers(text, c)
         if c.punct_re:
             text = c.punct_re.sub(lambda m: self._punct_sub(m, c), text)
-        return c.post_re.sub(lambda m: self._post_sub(m, c), text)
+        text = c.post_re.sub(lambda m: self._post_sub(m, c), text)
+        if c.let_re is not None and not text.isascii():
+            text = c.let_re.sub(lambda m: self._let_sub(m, c), text)
+        return text
 
     # ------------------------------------------------------------------- rule sets
     def _apply_rules(self, text: str, rules: RuleSet, applied: Optional[list], spoken: list,
@@ -584,6 +608,20 @@ class Normalizer:
             return s["+"] + " " if "+" in s else g
         return f" {s['−']} " if "−" in s else g
 
+    def _let_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
+        """A letter symbol, spaced only where it touches a letter or digit: "Δt", "α-Teilchen"."""
+        text, start, end = m.string, m.start(), m.end()
+        before, after = text[start - 1:start], text[end:end + 1]
+        # a letter before that is replaced as well already brings its space: "ℏω"
+        left = " " if (before.isalpha() and before not in c.sym) or before.isdecimal() else ""
+        return f"{left}{c.sym[m.group()]}{' ' if after.isalpha() or after.isdecimal() else ''}"
+
+    def _vulgar_sub(self, m: "re.Match[str]") -> str:
+        num, den = _VULGAR[m.group(2)]
+        if m.group(1) is None:
+            return self.lang.fraction(num, den)
+        return self.lang.mixed_fraction(int(m.group(1)), num, den)
+
     def _post_sub(self, m: "re.Match[str]", c: _Compiled) -> str:
         s = c.sym
         if m.group("sq"):
@@ -593,7 +631,15 @@ class Normalizer:
                 word = s.get(m.group(name))
                 if not word:
                     return m.group()
-                return word if name == "amp" else f" {word} "
+                if name == "amp":
+                    return word
+                if name == "op":  # no space at the text's edges, inside brackets or before punctuation
+                    text, start, end = m.string, m.start(), m.end()
+                    before, after = text[start - 1:start], text[end:end + 1]
+                    left = " " if before and not before.isspace() and before not in "([{" else ""
+                    right = " " if after and not after.isspace() and after not in ")]}.,;:!?" else ""
+                    return f"{left}{word}{right}"
+                return f" {word} "
         return m.group()
 
     # ------------------------------------------------------------------ numbers

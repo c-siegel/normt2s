@@ -84,6 +84,11 @@ German dates take their case ending from the word before: `am` / `vom` / `zum` /
 
 - **Symbols:** `add_symbol` accepts any character or sequence without whitespace
   (`n.add_symbol("@", "at")`); an empty or blank key raises `ValueError`.
+- **Greek letters and math signs** are read in prose too: `Δt` is "Delta t", `λ = 500 nm`, `x → ∞`
+  is "x to infinity", `√2`, `a ∝ b`, `0,5‰`. A Greek letter next to another one is part of a Greek
+  word and is left alone. `µ` alone is the letter ("My" / "mu"); before a unit it is the prefix, so
+  `in µm` stays. `Ω` alone is read as the unit ("in ohm").
+- **Fractions** `½`, `¼` and `¾`: `1½ Stunden` is "eineinhalb Stunden", `2¼` "two and a quarter".
 - **`*` and `/`** are ambiguous in prose, so they live in an `operators` table and are only read
   between operands: `3 * 4`, `3*4` and `2*(x+1)` use "times"; `3 / 4` (spaces required) uses "divided
   by". `1/2` stays a fraction; `a * b`, `*word*` and `and/or` are untouched. `·` also takes single
@@ -486,6 +491,8 @@ Rules that need code (how to build "twenty-one") live in `langs/`; word lists li
   (`12V`), so the J in `5 J` is not read as joules (`5 Ω` matches with a space). `A`, `K`, `C`, `F`
   and `T` exist only with a prefix (`mA`, `mK`, `µC`, `µF`, `mT`), so `Klasse 5A` is not five amperes
   and `4K` not four kelvin; their nouns still have a gender (`1 Kelvin` is "ein Kelvin").
+- **LaTeX Greek letters** use English names in both languages (`$\alpha$` is "alpha"), unlike
+  `α` in prose ("Alpha" in German).
 - **LaTeX:** a lone `|` reads as "such that", so `P(A|B)` is not "given". Layout commands such as
   `\overset` and `\underbrace` are not interpreted.
 

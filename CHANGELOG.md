@@ -14,6 +14,12 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
 - **Output change:** new units `rad`, `Bq`, `Gy`, `Sv` (and English `t`, tonne). Kelvin, Ampere,
   Coulomb, Farad and Tesla exist only with a prefix, but their nouns take a gender: `1 Kelvin` ->
   "ein Kelvin". `5 Ω` is read with a space too ("five ohms"); other lone capitals still need `5V`.
+- **Output change:** Greek letters and math signs in prose: `Δt` -> "Delta t", `λ`, `π`, `ℏ`, `∝`,
+  `∞`, `→`, `⇒`, `⇔`, `√`, `‰`. Greek words stay as they are; `µ` before a unit stays a prefix.
+- **Output change:** `½`, `¼`, `¾`: `1½ Stunden` -> "eineinhalb Stunden", `2¼` -> "two and a quarter".
+  New `Language.mixed_fraction`.
+- **Output change:** a symbol at the text's edge, inside brackets or before punctuation gets no
+  extra space: `× 3` -> "mal drei" (was " mal drei"), `(×)` -> "(mal)".
 
 ## 0.5.0
 

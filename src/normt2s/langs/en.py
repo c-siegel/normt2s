@@ -129,6 +129,12 @@ class English(Language):
             return f"{top} {'quarters' if plural else 'quarter'}"
         return f"{top} {self.ordinal(den)}{'s' if plural else ''}"
 
+    def mixed_fraction(self, whole: int, num: int, den: int) -> str:
+        frac = self.fraction(num, den)
+        if num == 1:  # "one and a half", not "one and one half"
+            frac = "a " + frac.split(" ", 1)[1]
+        return f"{self.cardinal(whole)} and {frac}"
+
     def pluralize(self, singular: str) -> str:
         if singular.endswith(("s", "x", "z", "ch", "sh")):
             return singular + "es"

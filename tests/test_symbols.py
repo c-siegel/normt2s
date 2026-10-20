@@ -14,6 +14,46 @@ def en():
 
 
 @pytest.mark.parametrize("src,want", [
+    ("Δt = 5 s", "Delta t gleich fünf Sekunden"),
+    ("α-Teilchen", "Alpha-Teilchen"),
+    ("2π r", "zwei Pi r"),
+    ("ℏω", "h quer Omega"),
+    ("σ²", "Sigma zum Quadrat"),
+    ("(α)", "(Alpha)"),
+    ("µ = 0,3", "My gleich null Komma drei"),
+    ("μ-Wert", "My-Wert"),
+    ("5 µm", "fünf Mikrometer"),       # µ before a unit is the prefix
+    ("in µm", "in µm"),                # ... and is not read as a letter
+    ("Ελλάδα", "Ελλάδα"),              # Greek words are left alone
+    ("in Ω", "in Ohm"),
+    ("a ∝ b", "a ist proportional zu b"),
+    ("x → ∞", "x nach unendlich"),
+    ("A ⇒ B", "A daraus folgt B"),
+    ("√2 ist irrational", "Wurzel aus zwei ist irrational"),
+    ("0,5‰ Alkohol.", "null Komma fünf Promille Alkohol."),
+    ("½ Liter", "ein halb Liter"),
+    ("1½ Stunden", "eineinhalb Stunden"),
+    ("2 ¾", "zweidreiviertel"),
+    ("(×)", "(mal)"),
+    ("× 3", "mal drei"),
+])
+def test_german_symbols(de, src, want):
+    assert de.normalize(src) == want
+
+
+@pytest.mark.parametrize("src,want", [
+    ("ΔT", "delta T"),
+    ("λ = 500 nm", "lambda equals five hundred nanometers"),
+    ("R = 5 Ω", "R equals five ohms"),
+    ("1½ cups", "one and a half cups"),
+    ("2¼", "two and a quarter"),
+    ("x → ∞", "x to infinity"),
+])
+def test_english_symbols(en, src, want):
+    assert en.normalize(src) == want
+
+
+@pytest.mark.parametrize("src,want", [
     ("1 rad", "ein Radiant"),
     ("5 mSv", "fünf Millisievert"),
     ("1 Gy", "ein Gray"),

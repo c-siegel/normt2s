@@ -151,5 +151,9 @@ class German(Language):
         # "dritte" -> "drittel", "fünfte" -> "fünftel"
         return f"{top} {self.ordinal(den)[:-1]}el"
 
+    def mixed_fraction(self, whole: int, num: int, den: int) -> str:
+        # one word: "eineinhalb", "zweidreiviertel"
+        return self.cardinal(whole, "n" if whole == 1 else None) + self.fraction(num, den).replace(" ", "")
+
 
 register(German())
