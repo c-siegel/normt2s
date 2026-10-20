@@ -145,6 +145,21 @@
   "eV": [
    "electron volt"
   ],
+  "t": [
+   "tonne"
+  ],
+  "rad": [
+   "radian"
+  ],
+  "Bq": [
+   "becquerel"
+  ],
+  "Gy": [
+   "gray"
+  ],
+  "Sv": [
+   "sievert"
+  ],
   "Pa": [
    "pascal"
   ],
@@ -226,9 +241,11 @@
   "F": ["pnµm", "farad"],
   "T": ["nµm", "tesla"],
   "C": ["nµm", "coulomb"],
-  "Sv": ["µm", "sievert", "sieverts"],
-  "Gy": ["m", "gray"],
-  "Bq": ["kMG", "becquerel"]
+  "Sv": "µm",
+  "Gy": "m",
+  "Bq": "kMG",
+  "rad": "m",
+  "K": ["m", "kelvin"]
  },
  "currencies": {
   "$": {

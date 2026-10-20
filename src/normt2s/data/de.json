@@ -183,6 +183,26 @@
    "Kalorien",
    "f"
   ],
+  "rad": [
+   "Radiant",
+   "Radiant",
+   "m"
+  ],
+  "Bq": [
+   "Becquerel",
+   "Becquerel",
+   "n"
+  ],
+  "Gy": [
+   "Gray",
+   "Gray",
+   "n"
+  ],
+  "Sv": [
+   "Sievert",
+   "Sievert",
+   "n"
+  ],
   "Pa": [
    "Pascal",
    "Pascal",
@@ -274,9 +294,11 @@
   "F": ["pnµm", "Farad", "Farad", "n"],
   "T": ["nµm", "Tesla", "Tesla", "n"],
   "C": ["nµm", "Coulomb", "Coulomb", "n"],
-  "Sv": ["µm", "Sievert", "Sievert", "n"],
-  "Gy": ["m", "Gray", "Gray", "n"],
-  "Bq": ["kMG", "Becquerel", "Becquerel", "n"]
+  "Sv": "µm",
+  "Gy": "m",
+  "Bq": "kMG",
+  "rad": "m",
+  "K": ["m", "Kelvin", "Kelvin", "n"]
  },
  "currencies": {
   "€": {

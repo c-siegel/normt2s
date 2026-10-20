@@ -483,8 +483,9 @@ Rules that need code (how to build "twenty-one") live in `langs/`; word lists li
 - **Durations** such as `1:30:15` are not recognised.
 - **Thousands:** a space between groups of three digits is a separator, so `3 100` is one number.
 - **Single capital-letter units** (`V`, `W`, `L`, `N`, `J`) only match attached to the number
-  (`12V`), so the J in `5 J` is not read as joules. `A` is not a unit at all, so `Klasse 5A` is
-  not five amperes.
+  (`12V`), so the J in `5 J` is not read as joules (`5 Ω` matches with a space). `A`, `K`, `C`, `F`
+  and `T` exist only with a prefix (`mA`, `mK`, `µC`, `µF`, `mT`), so `Klasse 5A` is not five amperes
+  and `4K` not four kelvin; their nouns still have a gender (`1 Kelvin` is "ein Kelvin").
 - **LaTeX:** a lone `|` reads as "such that", so `P(A|B)` is not "given". Layout commands such as
   `\overset` and `\underbrace` are not interpreted.
 

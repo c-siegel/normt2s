@@ -364,8 +364,9 @@ class Normalizer:
 
         # what may follow a number
         syms = sorted(lex.units, key=len, reverse=True)
-        free = "|".join(esc(s) for s in syms if not (len(s) == 1 and s.isupper()))
-        attached = "|".join(esc(s) for s in syms if len(s) == 1 and s.isupper())
+        # a lone Latin capital is a unit only attached to the number: "12V", but "Klasse 5 A"
+        free = "|".join(esc(s) for s in syms if not (len(s) == 1 and s.isupper() and s.isascii()))
+        attached = "|".join(esc(s) for s in syms if len(s) == 1 and s.isupper() and s.isascii())
         every = "|".join(esc(s) for s in syms)
         alts = [r"(?P<pct>\s?%)"]
         if lang.ordinal_suffix:

@@ -134,6 +134,8 @@ class Lexicon:
         self.units: Dict[str, Form] = {}
         # SI prefixes ("k" -> "kilo") and which of them each base unit takes; see add_prefixed_unit
         self.prefixes: Dict[str, str] = {}
+        # bases that only exist with a prefix (farad: µF but no bare F); their nouns still count
+        self.prefix_bases: Dict[str, Form] = {}
         self._explicit_units: Set[str] = set()
         self.currencies: Dict[str, Currency] = {}
         self.symbols: Dict[str, str] = {}
@@ -175,9 +177,10 @@ class Lexicon:
             with self.lock:
                 version = self.version
                 nouns: Dict[str, Form] = {}
-                for form in self.units.values():
+                forms = [*self.units.values(), *self.prefix_bases.values()]
+                for form in forms:
                     nouns.setdefault(form.plural, form)
-                for form in self.units.values():
+                for form in forms:
                     nouns[form.singular] = form
                 cached = self._nouns = (version, nouns)
         return cached[1]
@@ -294,6 +297,7 @@ class Lexicon:
             form = self.units[base]
         else:
             form = Form(singular, plural or self._pluralize(singular), gender)
+            self.prefix_bases[base] = form
         unknown = [p for p in prefixes if p not in self.prefixes]
         if unknown:
             raise ValueError(f"unknown prefixes {unknown} for {base!r}")
