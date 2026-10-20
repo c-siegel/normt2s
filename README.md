@@ -67,7 +67,7 @@ Every row is real output from the library.
 
 | Category | Input | Spoken |
 |---|---|---|
-| Numbers | `1.234,5`, `1/3`, `3/4` | eintausendzweihundertvierunddreißig Komma fünf, ein drittel, drei viertel |
+| Numbers | `1.234,15`, `1/3`, `3/4` | eintausendzweihundertvierunddreißig Komma eins fünf, ein drittel, drei viertel |
 | Ordinals | `der 3. Platz`, `im 21. Jahrhundert`, `Kapitel 3. Danach` | der dritte Platz, im einundzwanzigsten Jahrhundert, Kapitel drei. Danach |
 | Dates | `15.03.2024`, `am 15.03.2024` | fünfzehnter März zweitausendvierundzwanzig, am fünfzehnten März zweitausendvierundzwanzig |
 | | `am 3. Mai`, `im Mai 2024` | am dritten Mai, im Mai zweitausendvierundzwanzig |
