@@ -340,8 +340,8 @@ class Normalizer:
             r"(?P<sq>(?<=[\w)\]])[²³])"
             + (r"|\s?(?P<mop>" + "|".join(esc(k) for k in multi) + r")\s?" if multi else "")
             + (r"|\s?(?P<op>[" + "".join(esc(k) for k in chars) + r"])\s?" if chars else "")
-            # a parked rule output (...) is an operand too: "F = 1 N"
-            + r"|(?<=[\w)\]])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£-])"
+            # a parked rule output (\uE002...\uE003) is an operand too: "F = 1 N"
+            + r"|(?<=[\w)\]\uE003])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£\uE002-])"
             r"|(?<=\S) (?P<cmp>[<>]) (?=\S)"
             r"|(?<=\s)(?P<amp>&)(?=\s)"
         )
