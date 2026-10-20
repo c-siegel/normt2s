@@ -13,6 +13,9 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
   `5V`.
 - **Output change:** new units `Nm` / `N·m` (Newtonmeter, also `kNm`), `Ws` / `W·s`, `VA` (also
   `kVA`, `MVA`) and `Ah`. `5 N·m` is no longer "N mal m".
+- **Output change (LaTeX):** compound units in `\mathrm{}` / `\text{}` after a number:
+  `9{,}81\,\mathrm{m/s^2}` -> "... Meter pro Sekunde zum Quadrat", `\mathrm{N\cdot m}`. A lone capital
+  is a unit in math, including K, A, C, F and T: `300\,\mathrm{K}` -> "dreihundert Kelvin".
 
 ## 0.6.0
 

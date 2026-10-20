@@ -412,12 +412,14 @@ class LatexSpeaker:
                     and parts and nxt != ("sym", "="):
                 parts[-1] = self.phrase("factorial", x=parts[-1])
             elif k == "text" and prev is not None and prev[0] == "num" \
-                    and node[1].strip() in self.lex.units:
-                form = self.lex.units[node[1].strip()]
+                    and self._unit(node[1]) is not None:
+                form, per = self._unit(node[1])
                 digits = _decimal(prev[1])
                 ip, sep, fp = digits.partition(".")
                 parts[-1] = self.n._words(ip, fp if sep else None, False, form.gender)
                 parts.append(form.pick(digits == "1"))
+                if per is not None:
+                    parts.append(f"{self.n.lang.per_word} {per.singular}")
             elif nxt is not None and nxt[0] == "paren" and nxt[1] == "(" and self._is_func(node):
                 parts.append(self.phrase("of", f=self.node(node), x=self.seq(nxt[3])))
                 i += 1
@@ -430,6 +432,28 @@ class LatexSpeaker:
                 parts.append(self.node(node))
             i += 1
         return self._join(parts)
+
+    def _unit(self, text: str):
+        r"""``(form, per_form)`` for a unit in ``\mathrm{...}`` after a number, else None.
+
+        Understands ``m/s^2`` and ``N\cdot m``. In math a lone capital is a unit (``300\,\mathrm{K}``),
+        including bases that prose only knows with a prefix (K, A, C, F, T).
+        """
+        u = re.sub(r"\^\{?([23])\}?", lambda m: "²" if m.group(1) == "2" else "³", text)
+        u = re.sub(r"\s*\\cdot\s*", "·", u).strip()
+        lex = self.lex
+
+        def find(sym: str):
+            return lex.units.get(sym) or lex.prefix_bases.get(sym)
+
+        num, slash, den = u.partition("/")
+        form = find(num.strip())
+        if form is None:
+            return None
+        if not slash:
+            return form, None
+        per = find(den.strip())
+        return (form, per) if per is not None else None
 
     def _wrap(self, node, inner: str) -> str:
         o = _OPEN_PHRASE.get(node[1])

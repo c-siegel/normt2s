@@ -315,7 +315,9 @@ normalize(r"Es gilt $x \in \mathbb{R}$ und $\sum_{i=1}^{n} i$.", lang="de")
 Supported: fractions, roots, powers and subscripts, sums, products, integrals, limits, Greek
 letters, relations and set notation, functions (`\sin`, `\log`), absolute values, norms, accents,
 `\binom`, factorials, primes, matrices, `cases`, `\text{}` / `\mathrm{}`. Units after a number work:
-`5\,\mathrm{km}` is "five kilometers".
+`5\,\mathrm{km}` is "five kilometers", `9{,}81\,\mathrm{m/s^2}` "nine point eight one meters per
+second squared", `5\,\mathrm{N\cdot m}` "five newton meters". In math a lone capital is a unit:
+`300\,\mathrm{K}` is "three hundred kelvins".
 
 - **Parentheses** are only spoken where they change the meaning: `(a+b)^2` and `2(x+1)` get "open
   paren ... close paren", `y = (x+1)` does not. Complex arguments are fenced ("the square root of x
@@ -493,6 +495,9 @@ Rules that need code (how to build "twenty-one") live in `langs/`; word lists li
   (`12V`), so the J in `5 J` is not read as joules (`5 Ω` matches with a space). `A`, `K`, `C`, `F`
   and `T` exist only with a prefix (`mA`, `mK`, `µC`, `µF`, `mT`), so `Klasse 5A` is not five amperes
   and `4K` not four kelvin; their nouns still have a gender (`1 Kelvin` is "ein Kelvin").
+- **Indexes in prose** are not read: `v₀`, `v_0`, `E_kin` and `x_i` stay as they are (in LaTeX,
+  `$v_0$` is "v sub zero"). Subscript digits in formulas (`H₂O`, `CO₂`) are not spelled either.
+- **Units without a number** stay as symbols: `in km`, `Angaben in kWh`.
 - **LaTeX Greek letters** use English names in both languages (`$\alpha$` is "alpha"), unlike
   `α` in prose ("Alpha" in German).
 - **LaTeX:** a lone `|` reads as "such that", so `P(A|B)` is not "given". Layout commands such as

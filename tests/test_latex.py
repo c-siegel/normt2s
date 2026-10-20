@@ -131,6 +131,12 @@ def test_math_delimiters(text, expected):
     ("|x|", "Betrag von x"),
     ("n!", "n Fakultät"),
     ("5\\,\\mathrm{km}", "fünf Kilometer"),
+    ("9{,}81\\,\\mathrm{m/s^2}", "neun Komma acht eins Meter pro Sekunde zum Quadrat"),
+    ("1{,}2\\,\\mathrm{kg/m^{3}}", "eins Komma zwei Kilogramm pro Kubikmeter"),
+    ("5\\,\\mathrm{N\\cdot m}", "fünf Newtonmeter"),
+    ("300\\,\\mathrm{K}", "dreihundert Kelvin"),
+    ("1\\,\\mathrm{F}", "ein Farad"),
+    ("3\\,\\mathrm{xyz}", "drei xyz"),
 ])
 def test_german_latex(tex, expected):
     assert de(tex) == expected
