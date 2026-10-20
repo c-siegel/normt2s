@@ -2,7 +2,7 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
-## Unreleased
+## 0.7.0
 
 - **Output change:** isotopes are read with the element's name: `Co-60` -> "Kobalt sechzig" /
   "cobalt sixty" (was "C o sechzig"), `U-235` -> "Uran zweihundertfünfunddreißig". A metastable

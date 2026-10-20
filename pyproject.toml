@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "normt2s"
-version = "0.6.0"
+version = "0.7.0"
 description = "Lightweight, dependency-free text normalization (numbers, units, abbreviations) for TTS."
 readme = "README.md"
 requires-python = ">=3.9"
