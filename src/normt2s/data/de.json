@@ -38,34 +38,9 @@
   "24/7": "vierundzwanzig sieben"
  },
  "units": {
-  "mm": [
-   "Millimeter",
-   "Millimeter",
-   "m"
-  ],
-  "cm": [
-   "Zentimeter",
-   "Zentimeter",
-   "m"
-  ],
   "m": [
    "Meter",
    "Meter",
-   "m"
-  ],
-  "km": [
-   "Kilometer",
-   "Kilometer",
-   "m"
-  ],
-  "µm": [
-   "Mikrometer",
-   "Mikrometer",
-   "m"
-  ],
-  "nm": [
-   "Nanometer",
-   "Nanometer",
    "m"
   ],
   "mm²": [
@@ -98,30 +73,15 @@
    "Kubikmeter",
    "m"
   ],
-  "mg": [
-   "Milligramm",
-   "Milligramm",
-   "n"
-  ],
   "g": [
    "Gramm",
    "Gramm",
    "n"
   ],
-  "kg": [
-   "Kilogramm",
-   "Kilogramm",
-   "n"
-  ],
-  "ml": [
-   "Milliliter",
-   "Milliliter",
-   "m"
-  ],
-  "cl": [
-   "Zentiliter",
-   "Zentiliter",
-   "m"
+  "t": [
+   "Tonne",
+   "Tonnen",
+   "f"
   ],
   "l": [
    "Liter",
@@ -132,21 +92,6 @@
    "Liter",
    "Liter",
    "m"
-  ],
-  "ns": [
-   "Nanosekunde",
-   "Nanosekunden",
-   "f"
-  ],
-  "µs": [
-   "Mikrosekunde",
-   "Mikrosekunden",
-   "f"
-  ],
-  "ms": [
-   "Millisekunde",
-   "Millisekunden",
-   "f"
   ],
   "s": [
    "Sekunde",
@@ -193,21 +138,6 @@
    "Volt",
    "n"
   ],
-  "mV": [
-   "Millivolt",
-   "Millivolt",
-   "n"
-  ],
-  "kV": [
-   "Kilovolt",
-   "Kilovolt",
-   "n"
-  ],
-  "mA": [
-   "Milliampere",
-   "Milliampere",
-   "n"
-  ],
   "W": [
    "Watt",
    "Watt",
@@ -216,26 +146,6 @@
   "Wh": [
    "Wattstunde",
    "Wattstunden",
-   "f"
-  ],
-  "kW": [
-   "Kilowatt",
-   "Kilowatt",
-   "n"
-  ],
-  "MW": [
-   "Megawatt",
-   "Megawatt",
-   "n"
-  ],
-  "GW": [
-   "Gigawatt",
-   "Gigawatt",
-   "n"
-  ],
-  "kWh": [
-   "Kilowattstunde",
-   "Kilowattstunden",
    "f"
   ],
   "mAh": [
@@ -248,19 +158,9 @@
    "Ohm",
    "n"
   ],
-  "kΩ": [
-   "Kiloohm",
-   "Kiloohm",
-   "n"
-  ],
   "N": [
    "Newton",
    "Newton",
-   "n"
-  ],
-  "kN": [
-   "Kilonewton",
-   "Kilonewton",
    "n"
   ],
   "Hz": [
@@ -268,35 +168,15 @@
    "Hertz",
    "n"
   ],
-  "kHz": [
-   "Kilohertz",
-   "Kilohertz",
-   "n"
-  ],
-  "MHz": [
-   "Megahertz",
-   "Megahertz",
-   "n"
-  ],
-  "GHz": [
-   "Gigahertz",
-   "Gigahertz",
-   "n"
-  ],
-  "kJ": [
-   "Kilojoule",
-   "Kilojoule",
+  "eV": [
+   "Elektronenvolt",
+   "Elektronenvolt",
    "n"
   ],
   "J": [
    "Joule",
    "Joule",
    "n"
-  ],
-  "kcal": [
-   "Kilokalorie",
-   "Kilokalorien",
-   "f"
   ],
   "cal": [
    "Kalorie",
@@ -306,11 +186,6 @@
   "Pa": [
    "Pascal",
    "Pascal",
-   "n"
-  ],
-  "kPa": [
-   "Kilopascal",
-   "Kilopascal",
    "n"
   ],
   "bar": [
@@ -363,6 +238,45 @@
    "Terabyte",
    "n"
   ]
+ },
+ "prefixes": {
+  "p": "Piko",
+  "n": "Nano",
+  "µ": "Mikro",
+  "m": "Milli",
+  "c": "Zenti",
+  "d": "Dezi",
+  "h": "Hekto",
+  "k": "Kilo",
+  "M": "Mega",
+  "G": "Giga",
+  "T": "Tera"
+ },
+ "prefixed_units": {
+  "m": "nµmcdk",
+  "g": "µmk",
+  "l": "µmcd",
+  "L": "md",
+  "s": "pnµm",
+  "V": "µmkM",
+  "W": "mkMG",
+  "Wh": "kMGT",
+  "Ω": "mkM",
+  "N": "mk",
+  "J": "mkM",
+  "Hz": "kMGT",
+  "Pa": "hkMG",
+  "bar": "m",
+  "mol": "nµm",
+  "cal": "k",
+  "eV": "kMGT",
+  "A": ["nµmk", "Ampere", "Ampere", "n"],
+  "F": ["pnµm", "Farad", "Farad", "n"],
+  "T": ["nµm", "Tesla", "Tesla", "n"],
+  "C": ["nµm", "Coulomb", "Coulomb", "n"],
+  "Sv": ["µm", "Sievert", "Sievert", "n"],
+  "Gy": ["m", "Gray", "Gray", "n"],
+  "Bq": ["kMG", "Becquerel", "Becquerel", "n"]
  },
  "currencies": {
   "€": {

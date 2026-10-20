@@ -2,6 +2,16 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## Unreleased
+
+- **Output change:** SI-prefixed units are generated from their base units, with gender and plural
+  from the base: `10 µF` -> "zehn Mikrofarad", `1013 hPa` -> "eintausenddreizehn Hektopascal", also
+  `MΩ`, `MJ`, `mT`, `mSv`, `keV`, `TWh`, `µg`, `dl`, `mbar`, `mmol` and more. Each base takes only its
+  common prefixes (no `Mm`, `cd`). Farad, Tesla, Ampere, Coulomb, Sievert, Gray and Becquerel exist
+  only with a prefix, so `5F` and `Klasse 5A` stay as they are. `μ` (Greek mu) works like `µ`.
+- **New:** `add_prefixed_unit(base, prefixes, singular=None, plural=None, gender=None)`,
+  `Lexicon.add_prefix(symbol, word)`, and `"prefixes"` / `"prefixed_units"` in lexicon files.
+
 ## 0.5.0
 
 - **Output change:** `·` between operands is multiplication: `F = m · a` -> "F gleich m mal a",

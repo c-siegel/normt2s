@@ -34,6 +34,50 @@ def test_add_unit_default_plural_and_explicit():
     assert n.normalize("2 ch") == "two children"
 
 
+@pytest.mark.parametrize("src,want", [
+    ("10 µF", "zehn Mikrofarad"),
+    ("10 μF", "zehn Mikrofarad"),            # Greek mu as well as the micro sign
+    ("1013 hPa", "eintausenddreizehn Hektopascal"),
+    ("1 mT", "ein Millitesla"),
+    ("1 TWh", "eine Terawattstunde"),
+    ("5 mmol/l", "fünf Millimol pro Liter"),
+    ("1 km", "ein Kilometer"),
+    ("5 Mm", "fünf Mm"),                     # only the prefixes listed for a base
+    ("5F", "fünf F"),                        # a base given only for its prefixes is no unit
+])
+def test_german_prefixed_units(src, want):
+    assert fresh("de").normalize(src) == want
+
+
+def test_english_prefixed_units():
+    n = fresh()
+    assert n.normalize("10 µF and 1 MΩ") == "ten microfarads and one megaohm"
+    assert n.normalize("13 TeV") == "thirteen teraelectron volts"
+
+
+def test_add_prefixed_unit():
+    n = fresh()
+    n.add_unit("Np", "neper")
+    n.add_prefixed_unit("Np", "dc")
+    assert n.normalize("3 dNp") == "three decinepers"
+    n.add_prefixed_unit("Wb", "m", "weber")
+    assert n.normalize("2 mWb, 2 Wb") == "two milliwebers, two Wb"
+    with pytest.raises(ValueError):
+        n.add_prefixed_unit("xyz", "k")              # no such base and no singular
+    with pytest.raises(ValueError):
+        n.add_prefixed_unit("Np", "Q")               # no such prefix
+    n.lexicon.add_prefix("Q", "quetta")
+    n.add_prefixed_unit("Np", "Q")
+    assert n.normalize("1 QNp") == "one quettaneper"
+
+
+def test_explicit_units_win_over_generated():
+    n = fresh()
+    n.add_unit("km", "klick")
+    n.add_prefixed_unit("m", "k")
+    assert n.normalize("2 km") == "two klicks"
+
+
 def test_add_currency():
     n = fresh()
     n.add_currency("CHF", ("franc", "francs"), ("rappen", "rappen"))

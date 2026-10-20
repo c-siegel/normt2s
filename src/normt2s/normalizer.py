@@ -146,6 +146,11 @@ class Normalizer:
         self.lexicon.add_unit(symbol, singular, plural, gender)
         return self
 
+    def add_prefixed_unit(self, base: str, prefixes: str, singular: Optional[str] = None,
+                          plural: Optional[str] = None, gender: Optional[str] = None) -> "Normalizer":
+        self.lexicon.add_prefixed_unit(base, prefixes, singular, plural, gender)
+        return self
+
     def add_currency(self, symbol: str, major: Sequence, minor: Optional[Sequence] = None):
         self.lexicon.add_currency(symbol, major, minor)
         return self

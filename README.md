@@ -129,6 +129,7 @@ used.
 |---|---|---|
 | An abbreviation | `add_abbreviation(key, to)` | `("tbh", "to be honest")` |
 | A unit after a number | `add_unit(symbol, singular, plural, gender)` | `("kn", "knot")` |
+| SI-prefixed units of a base | `add_prefixed_unit(base, prefixes, singular=None, ...)` | `("Pa", "hkM")` |
 | A currency | `add_currency(symbol, major, minor)` | see above |
 | A symbol (any character or sequence) | `add_symbol(key, word)` | `("=", "is")`, `("!=", "is not")` |
 | `*`, ` / ` or `·` between operands | `lexicon.add_operator(key, word)` | `("*", "times")` |
@@ -152,6 +153,7 @@ data in [en.json](src/normt2s/data/en.json) and [de.json](src/normt2s/data/de.js
 {
   "abbreviations": {"LMS": "learning management system", "etc.": {"to": "et cetera", "final": true}},
   "units": {"kn": ["knot"], "ch": ["child", "children"]},
+  "prefixed_units": {"Pa": "hkM", "Wb": ["m", "weber"]},
   "currencies": {"CHF": {"major": ["franc", "francs"], "minor": ["rappen", "rappen"]}},
   "symbols": {"=": "equals"},
   "operators": {"*": "times", "/": "divided by"},
@@ -168,6 +170,14 @@ data in [en.json](src/normt2s/data/en.json) and [de.json](src/normt2s/data/de.js
 
 A unit entry is `[singular, plural, gender]`; plural and gender are optional, and the gender
 (`"m"`, `"f"`, `"n"`) only matters in German.
+
+**SI prefixes.** Prefixed units are generated from a base and the prefixes it takes, so `µF`, `hPa`,
+`MΩ`, `mSv` or `keV` need no entry each. The word is prefix + base, with gender and plural from the
+base: `10 µF` is "zehn Mikrofarad", `1 TWh` "eine Terawattstunde". Each base lists only its common
+prefixes, so `Mm` and `cd` are not units. A base given as a string must be a unit (`"Pa": "hkM"`);
+one given as `[prefixes, singular, plural, gender]` need not be, so `µF` is read but a bare `5F` is
+not farads. `µ` also matches the Greek `μ`, and units added with `add_unit` always win. The prefix
+words live in `"prefixes"` (`n.lexicon.add_prefix("Q", "quetta")`).
 
 ## Markdown
 
@@ -454,7 +464,7 @@ Rules that need code (how to build "twenty-one") live in `langs/`; word lists li
 | a 700-character Markdown paragraph | about 0.36 ms |
 | the sentence with a 200-rule `RuleSet` | about 63 µs |
 | streaming 1,000 one-character chunks | about 8 ms |
-| one-time startup | about 5 ms |
+| one-time startup | about 7 ms |
 
 ## Known limitations
 

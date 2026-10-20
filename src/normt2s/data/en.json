@@ -35,23 +35,8 @@
   "24/7": "twenty four seven"
  },
  "units": {
-  "mm": [
-   "millimeter"
-  ],
-  "cm": [
-   "centimeter"
-  ],
   "m": [
    "meter"
-  ],
-  "km": [
-   "kilometer"
-  ],
-  "µm": [
-   "micrometer"
-  ],
-  "nm": [
-   "nanometer"
   ],
   "mi": [
    "mile"
@@ -81,14 +66,8 @@
   "m³": [
    "cubic meter"
   ],
-  "mg": [
-   "milligram"
-  ],
   "g": [
    "gram"
-  ],
-  "kg": [
-   "kilogram"
   ],
   "lb": [
    "pound"
@@ -100,26 +79,11 @@
   "oz": [
    "ounce"
   ],
-  "ml": [
-   "milliliter"
-  ],
-  "cl": [
-   "centiliter"
-  ],
   "l": [
    "liter"
   ],
   "L": [
    "liter"
-  ],
-  "ns": [
-   "nanosecond"
-  ],
-  "µs": [
-   "microsecond"
-  ],
-  "ms": [
-   "millisecond"
   ],
   "s": [
    "second"
@@ -153,32 +117,11 @@
   "V": [
    "volt"
   ],
-  "mV": [
-   "millivolt"
-  ],
-  "kV": [
-   "kilovolt"
-  ],
-  "mA": [
-   "milliampere"
-  ],
   "W": [
    "watt"
   ],
   "Wh": [
    "watt hour"
-  ],
-  "kW": [
-   "kilowatt"
-  ],
-  "MW": [
-   "megawatt"
-  ],
-  "GW": [
-   "gigawatt"
-  ],
-  "kWh": [
-   "kilowatt hour"
   ],
   "mAh": [
    "milliamp hour"
@@ -186,39 +129,15 @@
   "Ω": [
    "ohm"
   ],
-  "kΩ": [
-   "kiloohm"
-  ],
   "N": [
    "newton"
-  ],
-  "kN": [
-   "kilonewton"
   ],
   "Hz": [
    "hertz",
    "hertz"
   ],
-  "kHz": [
-   "kilohertz",
-   "kilohertz"
-  ],
-  "MHz": [
-   "megahertz",
-   "megahertz"
-  ],
-  "GHz": [
-   "gigahertz",
-   "gigahertz"
-  ],
-  "kJ": [
-   "kilojoule"
-  ],
   "J": [
    "joule"
-  ],
-  "kcal": [
-   "kilocalorie"
   ],
   "cal": [
    "calorie"
@@ -229,17 +148,11 @@
   "Pa": [
    "pascal"
   ],
-  "kPa": [
-   "kilopascal"
-  ],
   "bar": [
    "bar"
   ],
   "mol": [
    "mole"
-  ],
-  "mmol": [
-   "millimole"
   ],
   "dB": [
    "decibel"
@@ -277,6 +190,45 @@
   "TB": [
    "terabyte"
   ]
+ },
+ "prefixes": {
+  "p": "pico",
+  "n": "nano",
+  "µ": "micro",
+  "m": "milli",
+  "c": "centi",
+  "d": "deci",
+  "h": "hecto",
+  "k": "kilo",
+  "M": "mega",
+  "G": "giga",
+  "T": "tera"
+ },
+ "prefixed_units": {
+  "m": "nµmcdk",
+  "g": "µmk",
+  "l": "µmcd",
+  "L": "md",
+  "s": "pnµm",
+  "V": "µmkM",
+  "W": "mkMG",
+  "Wh": "kMGT",
+  "Ω": "mkM",
+  "N": "mk",
+  "J": "mkM",
+  "Hz": "kMGT",
+  "Pa": "hkMG",
+  "bar": "m",
+  "mol": "nµm",
+  "cal": "k",
+  "eV": "kMGT",
+  "A": ["nµmk", "ampere"],
+  "F": ["pnµm", "farad"],
+  "T": ["nµm", "tesla"],
+  "C": ["nµm", "coulomb"],
+  "Sv": ["µm", "sievert", "sieverts"],
+  "Gy": ["m", "gray"],
+  "Bq": ["kMG", "becquerel"]
  },
  "currencies": {
   "$": {

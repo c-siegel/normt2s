@@ -93,6 +93,11 @@ def _leading_literal(pattern: str) -> str:
     return text
 
 
+def _lower_first(word: str) -> str:
+    """The base of a compound unit: "Farad" -> "farad" (German "Mikrofarad")."""
+    return word[:1].lower() + word[1:]
+
+
 def _locked(fn):
     @functools.wraps(fn)
     def wrapper(self, *a, **kw):
@@ -127,6 +132,9 @@ class Lexicon:
         self._pluralize = pluralize
         self.abbreviations: Dict[str, Abbreviation] = {}
         self.units: Dict[str, Form] = {}
+        # SI prefixes ("k" -> "kilo") and which of them each base unit takes; see add_prefixed_unit
+        self.prefixes: Dict[str, str] = {}
+        self._explicit_units: Set[str] = set()
         self.currencies: Dict[str, Currency] = {}
         self.symbols: Dict[str, str] = {}
         # operators read only between operands: "*" and " / "
@@ -206,6 +214,13 @@ class Lexicon:
                 self.add_abbreviation(key, val)
         for sym, val in data.get("units", {}).items():
             self.add_unit(sym, *val)
+        for sym, val in data.get("prefixes", {}).items():
+            self.add_prefix(sym, val)
+        for base, val in data.get("prefixed_units", {}).items():
+            if isinstance(val, str):
+                self.add_prefixed_unit(base, val)
+            else:
+                self.add_prefixed_unit(base, *val)
         for sym, val in data.get("currencies", {}).items():
             self.add_currency(sym, val["major"], val.get("minor"))
         for key, val in data.get("symbols", {}).items():
@@ -252,6 +267,43 @@ class Lexicon:
                  gender: Optional[str] = None) -> None:
         """``add_unit("kn", "knot")`` -> "5 kn" reads "five knots"."""
         self.units[symbol] = Form(singular, plural or self._pluralize(singular), gender)
+        self._explicit_units.add(symbol)
+        self.version += 1
+
+    @_locked
+    def add_prefix(self, symbol: str, word: str) -> None:
+        """``add_prefix("k", "kilo")``: a prefix for :meth:`add_prefixed_unit`."""
+        if not symbol or not word:
+            raise ValueError("prefix symbol and word must not be empty")
+        self.prefixes[symbol] = word
+        self.version += 1
+
+    @_locked
+    def add_prefixed_unit(self, base: str, prefixes: str, singular: Optional[str] = None,
+                          plural: Optional[str] = None, gender: Optional[str] = None) -> None:
+        """``add_prefixed_unit("Pa", "hkM")`` adds hPa, kPa and MPa: "hecto" + "pascal".
+
+        Without ``singular`` the base must be a unit, whose forms and gender are used. With it, the
+        base needs not be a unit itself: ``add_prefixed_unit("F", "pnµm", "farad")`` adds µF but
+        not F. A ``µ`` prefix also adds the Greek ``μ`` spelling. Units added with :meth:`add_unit`
+        are never replaced.
+        """
+        if singular is None:
+            if base not in self.units:
+                raise ValueError(f"unknown base unit {base!r}; pass its singular")
+            form = self.units[base]
+        else:
+            form = Form(singular, plural or self._pluralize(singular), gender)
+        unknown = [p for p in prefixes if p not in self.prefixes]
+        if unknown:
+            raise ValueError(f"unknown prefixes {unknown} for {base!r}")
+        for p in prefixes:
+            word = self.prefixes[p]
+            made = Form(word + _lower_first(form.singular), word + _lower_first(form.plural),
+                        form.gender)
+            for symbol in (p + base, "μ" + base) if p == "µ" else (p + base,):
+                if symbol not in self._explicit_units:
+                    self.units[symbol] = made
         self.version += 1
 
     @_locked
