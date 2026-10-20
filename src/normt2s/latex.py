@@ -13,14 +13,16 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-_TOKEN_RE = re.compile(
-    r"""(?P<cmd>\\(?:[A-Za-z]+\*?|[^A-Za-z]))
-      | (?P<num>\d+(?:\.\d+)?(?:\{,\}\d+)?)
+_TOKEN_PATTERN = r"""(?P<cmd>\\(?:[A-Za-z]+\*?|[^A-Za-z]))
+      | (?P<num>{comma}\d+(?:\.\d+)?(?:\{{,\}}\d+)?)
       | (?P<let>[A-Za-z])
       | (?P<ws>\s+)
-      | (?P<sym>.)""",
-    re.X | re.S,
-)
+      | (?P<sym>.)"""
+_TOKEN_RE = re.compile(_TOKEN_PATTERN.format(comma=""), re.X | re.S)
+# Languages with a decimal comma also read a bare "1,23" as a number. Lists ("1, 2"), chains
+# ("1,2,3") and the digit after one ("2" in "1,2,3") stay separate tokens.
+_TOKEN_RE_COMMA = re.compile(_TOKEN_PATTERN.format(comma=r"(?<!\d,)\d+,\d+(?!,?\d)|"),
+                             re.X | re.S)
 
 _IGNORE = {",", ";", ":", "!", " ", "quad", "qquad", "displaystyle", "textstyle", "scriptstyle",
            "scriptscriptstyle", "limits", "nolimits", "big", "Big", "bigg", "Bigg", "bigl", "bigr",
@@ -66,6 +68,11 @@ GREEK = {
 }
 
 
+def _decimal(text: str) -> str:
+    """Normalize a number token's decimal mark ("{,}" or a bare ",") to "."."""
+    return text.replace("{,}", ".").replace(",", ".")
+
+
 class _Tok:
     __slots__ = ("kind", "text", "start", "end")
 
@@ -73,9 +80,9 @@ class _Tok:
         self.kind, self.text, self.start, self.end = kind, text, start, end
 
 
-def _tokenize(src: str) -> List[_Tok]:
+def _tokenize(src: str, decimal_comma: bool = False) -> List[_Tok]:
     toks = []
-    for m in _TOKEN_RE.finditer(src):
+    for m in (_TOKEN_RE_COMMA if decimal_comma else _TOKEN_RE).finditer(src):
         kind, text = m.lastgroup, m.group()
         if kind == "ws":
             continue
@@ -349,7 +356,8 @@ class LatexSpeaker:
 
     def speak(self, src: str) -> Optional[str]:
         try:
-            tree = _Parser(src, _tokenize(src)).parse_seq()
+            toks = _tokenize(src, self.n.lang.decimal_sep == ",")
+            tree = _Parser(src, toks).parse_seq()
             text = self.seq(tree)
         except Exception:  # malformed or unsupported input: caller keeps the original
             return None
@@ -406,7 +414,7 @@ class LatexSpeaker:
             elif k == "text" and prev is not None and prev[0] == "num" \
                     and node[1].strip() in self.lex.units:
                 form = self.lex.units[node[1].strip()]
-                digits = prev[1].replace("{,}", ".")
+                digits = _decimal(prev[1])
                 ip, sep, fp = digits.partition(".")
                 parts[-1] = self.n._words(ip, fp if sep else None, False, form.gender)
                 parts.append(form.pick(digits == "1"))
@@ -431,7 +439,7 @@ class LatexSpeaker:
         return " ".join(p for p in (left, inner, right) if p)
 
     def num(self, text: str) -> str:
-        ip, sep, fp = text.replace("{,}", ".").partition(".")
+        ip, sep, fp = _decimal(text).partition(".")
         return self.n._words(ip, fp if sep else None, False)
 
     def sym(self, x: str) -> str:

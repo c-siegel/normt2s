@@ -2,6 +2,12 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## 0.4.1
+
+- **Output change (German):** a bare decimal comma in LaTeX is a decimal: `$1,23 \cdot x$` -> "eins
+  Komma zwei drei mal x" (was "eins, dreiundzwanzig mal x"). Spaced lists (`1, 2`) and chains
+  (`\{1,2,3\}`) stay lists; `(1,2)` now reads "eins Komma zwei" (write `(1;2)` for a pair).
+
 ## 0.4.0
 
 - **Bug fix (German):** `um 14:30 Uhr` -> "um vierzehn Uhr dreißig" (was "... dreißig Uhr Uhr").
