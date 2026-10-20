@@ -518,7 +518,7 @@ hostile-input tests feed every entry point with 100 kB of repeated `*`, `_`, `{`
 
 ## AI notice
 
-This package was co-authored with Claude Code (Claude Sonnet 5.5, Anthropic). The code, tests and
+This package was co-authored with Claude Code (Claude Opus & Sonnet 5.5, Anthropic). The code, tests and
 documentation were written in collaboration between a human maintainer and the AI assistant.
 Please review the output against your own requirements before relying on it in production.
 
