@@ -123,9 +123,6 @@
   "Wh": [
    "watt hour"
   ],
-  "mAh": [
-   "milliamp hour"
-  ],
   "Ω": [
    "ohm"
   ],
@@ -159,6 +156,24 @@
   ],
   "Sv": [
    "sievert"
+  ],
+  "Nm": [
+   "newton meter"
+  ],
+  "N·m": [
+   "newton meter"
+  ],
+  "Ws": [
+   "watt second"
+  ],
+  "W·s": [
+   "watt second"
+  ],
+  "VA": [
+   "volt-ampere"
+  ],
+  "Ah": [
+   "amp hour"
   ],
   "Pa": [
    "pascal"
@@ -245,7 +260,11 @@
   "Gy": "m",
   "Bq": "kMG",
   "rad": "m",
-  "K": ["m", "kelvin"]
+  "K": ["m", "kelvin"],
+  "Nm": "k",
+  "N·m": "k",
+  "VA": "kM",
+  "Ah": "m"
  },
  "elements": {
   "H": "hydrogen",

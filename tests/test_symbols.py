@@ -80,3 +80,23 @@ def test_english_tonne(en):
 
 def test_ohm_with_a_space():
     assert Normalizer("en").normalize("R = 5 Ω") == "R equals five ohms"
+
+
+@pytest.mark.parametrize("src,want", [
+    ("5 W/m²", "fünf Watt pro Quadratmeter"),   # a spaced capital is a unit before "/"
+    ("10 V/m", "zehn Volt pro Meter"),
+    ("Klasse 5 A/B", "Klasse fünf A/B"),
+    ("40 Nm", "vierzig Newtonmeter"),
+    ("5 N·m", "fünf Newtonmeter"),               # not "N mal m"
+    ("2 kN·m", "zwei Kilonewtonmeter"),
+    ("3 W·s", "drei Wattsekunden"),
+    ("2 kVA", "zwei Kilovoltampere"),
+    ("2000 mAh", "zweitausend Milliamperestunden"),
+    ("F = m · a", "F gleich m mal a"),
+])
+def test_german_compound_units(de, src, want):
+    assert de.normalize(src) == want
+
+
+def test_english_compound_units(en):
+    assert en.normalize("5 W/m² and 40 Nm") == "five watts per square meter and forty newton meters"

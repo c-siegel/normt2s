@@ -8,6 +8,11 @@ Before 1.0 a minor release may change spoken output; a patch release never does.
   "cobalt sixty" (was "C o sechzig"), `U-235` -> "Uran zweihundertfünfunddreißig". A metastable
   `m` is kept: `Tc-99m` -> "technetium ninety-nine m" (was "... ninety-nine meters"). New
   `"elements"` table and `Lexicon.add_element(symbol, name)`.
+- **Output change:** a lone capital unit after a space is read when a denominator follows: `5 W/m²`
+  -> "fünf Watt pro Quadratmeter", `10 V/m`, `3 J/kg` (was left as is). `5 V` alone still needs
+  `5V`.
+- **Output change:** new units `Nm` / `N·m` (Newtonmeter, also `kNm`), `Ws` / `W·s`, `VA` (also
+  `kVA`, `MVA`) and `Ah`. `5 N·m` is no longer "N mal m".
 
 ## 0.6.0
 

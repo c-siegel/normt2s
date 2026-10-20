@@ -337,7 +337,9 @@ class Normalizer:
         # 2 · 3, m · a; never Lehrer·innen or "Home · About". Its own regex, run only on text with
         # a "·": its leading lookbehinds would otherwise be tried at every letter.
         letter = r"[^\W\d_]"
-        dot_re = re.compile(rf"(?:(?<=[\d)\]])|(?<=(?<!{letter}){letter}))\s*·\s*"
+        # a letter right after a number is a unit, so "5 N·m" is left to the unit step
+        dot_re = re.compile(rf"(?:(?<=[\d)\]])|(?<=(?<!{letter}){letter})(?<!\d{letter})"
+                            rf"(?<!\d[ {_NBSP}]{letter}))\s*·\s*"
                             rf"(?=[\d(\[]|{letter}(?!{letter}))") if "·" in ops else None
         # every other single-character symbol is infix; longer keys (``!=``) go by length
         handled = "-^#%=+<>&²³"
@@ -397,7 +399,9 @@ class Normalizer:
         if cur_all:
             alts.append(rf"(?P<csuf>\s?(?P<csym>{cur_all})(?![\w]))")
         alts.append(
-            rf"(?P<unit>(?:[ {_NBSP}]?(?P<uf>{free or '(?!)'})|(?P<ua>{attached or '(?!)'}))"
+            # a lone capital may follow a space when a denominator makes it a unit: "5 W/m²"
+            rf"(?P<unit>(?:[ {_NBSP}]?(?P<uf>{free or '(?!)'})|(?P<ua>{attached or '(?!)'})"
+            rf"|[ {_NBSP}](?P<us>{attached or '(?!)'})(?=/(?:{every or '(?!)'})(?![\w])))"
             rf"(?:/(?P<den>{every or '(?!)'}))?(?![\w]))"
         )
         suffix_re = re.compile("|".join(alts))
@@ -732,8 +736,8 @@ class Normalizer:
                 return lang.decade(int(intpart)), sm.end()
             if kind == "ampm" and frac is None and 1 <= int(intpart) <= 12 and not neg:
                 return lang.time(int(intpart), 0, sm.group("ampm").strip()), sm.end()
-            if kind in ("unit", "uf", "ua", "den"):
-                sym = sm.group("uf") or sm.group("ua")
+            if kind in ("unit", "uf", "ua", "us", "den"):
+                sym = sm.group("uf") or sm.group("ua") or sm.group("us")
                 if sym:
                     form = lex.units[sym]
                     words = f"{self._words(intpart, frac, neg, form.gender)} {form.pick(one)}"

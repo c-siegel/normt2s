@@ -148,11 +148,6 @@
    "Wattstunden",
    "f"
   ],
-  "mAh": [
-   "Milliamperestunde",
-   "Milliamperestunden",
-   "f"
-  ],
   "Ω": [
    "Ohm",
    "Ohm",
@@ -202,6 +197,36 @@
    "Sievert",
    "Sievert",
    "n"
+  ],
+  "Nm": [
+   "Newtonmeter",
+   "Newtonmeter",
+   "m"
+  ],
+  "N·m": [
+   "Newtonmeter",
+   "Newtonmeter",
+   "m"
+  ],
+  "Ws": [
+   "Wattsekunde",
+   "Wattsekunden",
+   "f"
+  ],
+  "W·s": [
+   "Wattsekunde",
+   "Wattsekunden",
+   "f"
+  ],
+  "VA": [
+   "Voltampere",
+   "Voltampere",
+   "n"
+  ],
+  "Ah": [
+   "Amperestunde",
+   "Amperestunden",
+   "f"
   ],
   "Pa": [
    "Pascal",
@@ -298,7 +323,11 @@
   "Gy": "m",
   "Bq": "kMG",
   "rad": "m",
-  "K": ["m", "Kelvin", "Kelvin", "n"]
+  "K": ["m", "Kelvin", "Kelvin", "n"],
+  "Nm": "k",
+  "N·m": "k",
+  "VA": "kM",
+  "Ah": "m"
  },
  "elements": {
   "H": "Wasserstoff",
