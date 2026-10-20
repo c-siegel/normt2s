@@ -11,7 +11,7 @@ from .stream import Piece, StreamNormalizer
 
 __all__ = ["Normalizer", "Lexicon", "StreamNormalizer", "Piece", "Rule", "RuleSet", "normalize",
            "get_normalizer"]
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 _cache: Dict[str, Normalizer] = {}
 
