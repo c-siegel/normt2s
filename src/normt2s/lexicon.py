@@ -137,6 +137,8 @@ class Lexicon:
         # bases that only exist with a prefix (farad: µF but no bare F); their nouns still count
         self.prefix_bases: Dict[str, Form] = {}
         self._explicit_units: Set[str] = set()
+        # element names for isotopes: "Co" -> "cobalt" ("Co-60" is "cobalt sixty")
+        self.elements: Dict[str, str] = {}
         self.currencies: Dict[str, Currency] = {}
         self.symbols: Dict[str, str] = {}
         # operators read only between operands: "*" and " / "
@@ -224,6 +226,8 @@ class Lexicon:
                 self.add_prefixed_unit(base, val)
             else:
                 self.add_prefixed_unit(base, *val)
+        for sym, val in data.get("elements", {}).items():
+            self.add_element(sym, val)
         for sym, val in data.get("currencies", {}).items():
             self.add_currency(sym, val["major"], val.get("minor"))
         for key, val in data.get("symbols", {}).items():
@@ -271,6 +275,12 @@ class Lexicon:
         """``add_unit("kn", "knot")`` -> "5 kn" reads "five knots"."""
         self.units[symbol] = Form(singular, plural or self._pluralize(singular), gender)
         self._explicit_units.add(symbol)
+        self.version += 1
+
+    @_locked
+    def add_element(self, symbol: str, name: str) -> None:
+        """``add_element("Co", "cobalt")``: the name an isotope (``Co-60``) is read with."""
+        self.elements[symbol] = name
         self.version += 1
 
     @_locked

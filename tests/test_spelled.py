@@ -12,8 +12,9 @@ from normt2s import Normalizer
     ("H2SO4", "H two S O four"),
     ("ECO2000", "ECO2000"),
     ("CO23", "CO23"),
-    ("U-235", "U two hundred thirty-five"),
-    ("Pu-239", "P u two hundred thirty-nine"),
+    ("C-14", "carbon fourteen"),
+    ("Co-60", "cobalt sixty"),                # two-letter symbols are names, not "C o"
+    ("Tc-99m", "technetium ninety-nine m"),
     ("A-4 paper", "A-four paper"),
 ])
 def test_spelled(src, want):
@@ -21,7 +22,15 @@ def test_spelled(src, want):
 
 
 def test_german_isotope():
-    assert Normalizer("de").normalize("U-235") == "U zweihundertfünfunddreißig"
+    de = Normalizer("de")
+    assert de.normalize("Co-60") == "Kobalt sechzig"
+    assert de.normalize("C-14") == "Kohlenstoff vierzehn"
+
+
+def test_add_element():
+    n = Normalizer("en")
+    n.lexicon.add_element("Co", "Co")
+    assert n.normalize("Co-60") == "Co sixty"
 
 
 def test_add_spelled():

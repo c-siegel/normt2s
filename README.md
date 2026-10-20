@@ -96,8 +96,10 @@ German dates take their case ending from the word before: `am` / `vom` / `zum` /
 - **Spelled tokens:** `CO2` would be read as one made-up word, so listed formulas are spelled out
   (letters as themselves, digit runs as numbers; `CO_2` matches too). Built in: `CO2 H2O O2 O3 N2 H2
   CH4 NH3 NaCl H2SO4 HCl NaOH CaCO3 SO2 NO2 C6H12O6`. Add more with `n.add_spelled("ATP5")`. Matching
-  is whole-token: `ECO2000` and `CO23` are left alone. Isotopes (`U-235`: element symbol, hyphen,
-  1–3 digits) lose the hyphen; `A-4` is not an element and stays.
+  is whole-token: `ECO2000` and `CO23` are left alone. Isotopes (element symbol, hyphen, 1–3 digits,
+  optional `m`) are read with the element's name: `Co-60` is "cobalt sixty", `Tc-99m` "technetium
+  ninety-nine m". `A-4` is not an element and stays. Names come from the `"elements"` table
+  (`n.lexicon.add_element("Co", "cobalt")`).
 - **Pauses:** an em dash becomes a comma pause, and between digits a range (`10—20` is "ten to
   twenty"). A dash at a line edge is dropped. Change it with `n.add_punctuation(char, replacement)`.
 - **Left alone:** code (inline and fenced), URLs, e-mail addresses, HTML tags and Markdown link

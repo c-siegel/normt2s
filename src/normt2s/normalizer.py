@@ -418,7 +418,8 @@ class Normalizer:
             r"(?<!\w)(?:" + "|".join(spelled_key(k) for k in sorted(lex.spelled, key=len, reverse=True))
             + r")(?!\w)") if lex.spelled else None
         elements = "|".join(sorted(Lexicon.elements(), key=len, reverse=True))
-        iso_re = re.compile(rf"(?<![\w-])(?P<el>{elements})-(?P<n>\d{{1,3}})(?![\w-])")
+        # "m" marks a metastable isotope: "Tc-99m"
+        iso_re = re.compile(rf"(?<![\w-])(?P<el>{elements})-(?P<n>\d{{1,3}})(?P<meta>m?)(?![\w-])")
         if lex.protected:
             custom = "|".join(f"(?P<p{i}>(?:{pat}))" for i, pat in enumerate(lex.protected))
             span_re = re.compile(custom + "|" + _PROTECT + "|" + _MATH)
@@ -560,8 +561,10 @@ class Normalizer:
         return " ".join(self.lang.cardinal(int(p)) if p.isdigit() else p for p in parts)
 
     def _isotope_sub(self, m: "re.Match[str]") -> str:
-        letters = " ".join(m.group("el"))
-        return f"{letters} {self.lang.cardinal(int(m.group('n')))}"
+        el = m.group("el")
+        name = self.lexicon.elements.get(el) or " ".join(el)  # "cobalt", else "C o"
+        meta = " m" if m.group("meta") else ""
+        return f"{name} {self.lang.cardinal(int(m.group('n')))}{meta}"
 
     @staticmethod
     def _punct_sub(m: "re.Match[str]", c: _Compiled) -> str:

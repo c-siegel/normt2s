@@ -2,6 +2,13 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## Unreleased
+
+- **Output change:** isotopes are read with the element's name: `Co-60` -> "Kobalt sechzig" /
+  "cobalt sixty" (was "C o sechzig"), `U-235` -> "Uran zweihundertfünfunddreißig". A metastable
+  `m` is kept: `Tc-99m` -> "technetium ninety-nine m" (was "... ninety-nine meters"). New
+  `"elements"` table and `Lexicon.add_element(symbol, name)`.
+
 ## 0.6.0
 
 - **Output change:** SI-prefixed units are generated from their base units, with gender and plural
