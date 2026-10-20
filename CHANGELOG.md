@@ -2,7 +2,7 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
-## Unreleased
+## 0.6.0
 
 - **Output change:** SI-prefixed units are generated from their base units, with gender and plural
   from the base: `10 µF` -> "zehn Mikrofarad", `1013 hPa` -> "eintausenddreizehn Hektopascal", also
