@@ -2,6 +2,21 @@
 
 Before 1.0 a minor release may change spoken output; a patch release never does.
 
+## 0.5.0
+
+- **Output change:** `·` between operands is multiplication: `F = m · a` -> "F gleich m mal a",
+  `2·3` -> "two times three". Like `*` it lives in `operators`; `Lehrer·innen` and `Home · About` are
+  untouched.
+- **Output change:** `=` and `+` next to a rule's replacement are read: `F = 1 N` with a
+  `{number} N` rule -> "F gleich ein Newton" (was "F = eins Newton").
+- **Output change:** new units `N`, `kN`, `J`, `Wh`, `Ω`, `kΩ` and `mAh` (`N`, `kN`, `J`, `Wh` in
+  English). German nouns take their gender: `1 Newton` -> "ein Newton" (was "eins Newton"). A
+  single capital (`N`, `J`) only counts attached to the number (`10N`).
+- **New:** `Rule(..., renormalize=True)` (`"renormalize": true` in JSON) reads a rule's replacement
+  once more: `Rule("1 s", "1 Sekunde", renormalize=True)` -> "eine Sekunde".
+- **Bug fix:** `add_protected` skips leading `^`, `\b` and lookarounds when it looks for the literal
+  start, so `(?<![\w:])::[a-z_]+::(?![\w:])` works without `opener=`.
+
 ## 0.4.1
 
 - **Output change (German):** a bare decimal comma in LaTeX is a decimal: `$1,23 \cdot x$` -> "eins

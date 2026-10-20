@@ -23,6 +23,11 @@ def de():
     ("-1 Stunde", "minus eine Stunde"),
     ("1\nStunde", "eins\nStunde"),
     ("1  Stunde", "eins  Stunde"),
+    ("1 Newton", "ein Newton"),
+    ("10N", "zehn Newton"),
+    ("1 Wh", "eine Wattstunde"),
+    ("1 kΩ", "ein Kiloohm"),
+    ("Klasse 5A", "Klasse fünf A"),
 ])
 def test_german(de, src, want):
     assert de.normalize(src) == want

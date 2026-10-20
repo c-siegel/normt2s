@@ -213,6 +213,11 @@
    "Watt",
    "n"
   ],
+  "Wh": [
+   "Wattstunde",
+   "Wattstunden",
+   "f"
+  ],
   "kW": [
    "Kilowatt",
    "Kilowatt",
@@ -232,6 +237,31 @@
    "Kilowattstunde",
    "Kilowattstunden",
    "f"
+  ],
+  "mAh": [
+   "Milliamperestunde",
+   "Milliamperestunden",
+   "f"
+  ],
+  "Ω": [
+   "Ohm",
+   "Ohm",
+   "n"
+  ],
+  "kΩ": [
+   "Kiloohm",
+   "Kiloohm",
+   "n"
+  ],
+  "N": [
+   "Newton",
+   "Newton",
+   "n"
+  ],
+  "kN": [
+   "Kilonewton",
+   "Kilonewton",
+   "n"
   ],
   "Hz": [
    "Hertz",
@@ -256,6 +286,11 @@
   "kJ": [
    "Kilojoule",
    "Kilojoule",
+   "n"
+  ],
+  "J": [
+   "Joule",
+   "Joule",
    "n"
   ],
   "kcal": [
@@ -438,7 +473,8 @@
  },
  "operators": {
   "*": "mal",
-  "/": "geteilt durch"
+  "/": "geteilt durch",
+  "·": "mal"
  },
  "latex": {
   "commands": {

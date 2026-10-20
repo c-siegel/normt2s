@@ -74,6 +74,22 @@ def test_rule_output_is_not_normalized_again(en):
     assert en.normalize("v2 now", rules=rs(Rule("v2", "version 2"))) == "version 2 now"
 
 
+def test_renormalize(de):
+    assert de.normalize("nach 1 s", rules=rs(Rule("1 s", "1 Sekunde", renormalize=True))) \
+        == "nach eine Sekunde"
+    loaded = RuleSet.from_dicts([{"term": "1 s", "spoken": "1 Sekunde", "renormalize": True}])
+    assert de.normalize("nach 1 s", rules=loaded) == "nach eine Sekunde"
+    with pytest.raises(ValueError):
+        RuleSet.from_dicts([{"term": "a", "spoken": "b", "renormalize": "yes"}])
+
+
+def test_rule_output_is_an_operand(de):
+    newton = rs(Rule("{number} N", "{number} Newton"))
+    assert de.normalize("F = 1 N", rules=newton) == "F gleich ein Newton"
+    assert de.normalize("1 N + 2 N = 3 N", rules=newton) \
+        == "ein Newton plus zwei Newton gleich drei Newton"
+
+
 def test_empty_term_ignored(en):
     assert len(RuleSet([Rule("", "x"), Rule("a", "b")])) == 1
 

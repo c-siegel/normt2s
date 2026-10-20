@@ -9,7 +9,7 @@ math into the words a text-to-speech engine should say, so `3.5 km/h` is not rea
 five k m slash h".
 
 - English and German, no dependencies, pure Python 3.9+
-- About 110 µs for a typical sentence
+- About 55 µs for a typical sentence
 - Built for LLM output: streaming token by token, optional Markdown stripping, your own control
   tokens and user pronunciation rules
 
@@ -86,7 +86,8 @@ German dates take their case ending from the word before: `am` / `vom` / `zum` /
   (`n.add_symbol("@", "at")`); an empty or blank key raises `ValueError`.
 - **`*` and `/`** are ambiguous in prose, so they live in an `operators` table and are only read
   between operands: `3 * 4`, `3*4` and `2*(x+1)` use "times"; `3 / 4` (spaces required) uses "divided
-  by". `1/2` stays a fraction; `a * b`, `*word*` and `and/or` are untouched.
+  by". `1/2` stays a fraction; `a * b`, `*word*` and `and/or` are untouched. `·` also takes single
+  letters: `F = m · a` is "F equals m times a", while `Lehrer·innen` and `Home · About` are untouched.
 - **Spelled tokens:** `CO2` would be read as one made-up word, so listed formulas are spelled out
   (letters as themselves, digit runs as numbers; `CO_2` matches too). Built in: `CO2 H2O O2 O3 N2 H2
   CH4 NH3 NaCl H2SO4 HCl NaOH CaCO3 SO2 NO2 C6H12O6`. Add more with `n.add_spelled("ATP5")`. Matching
@@ -130,7 +131,7 @@ used.
 | A unit after a number | `add_unit(symbol, singular, plural, gender)` | `("kn", "knot")` |
 | A currency | `add_currency(symbol, major, minor)` | see above |
 | A symbol (any character or sequence) | `add_symbol(key, word)` | `("=", "is")`, `("!=", "is not")` |
-| `*` or ` / ` between operands | `lexicon.add_operator(key, word)` | `("*", "times")` |
+| `*`, ` / ` or `·` between operands | `lexicon.add_operator(key, word)` | `("*", "times")` |
 | A token spelled letter by letter | `add_spelled(token)` | `("ATP5")` |
 | A character read as a pause | `add_punctuation(char, replacement)` | `("—", ", ")` |
 | Text to keep or drop | `add_protected(pattern, spoken=None, opener=None)` | `(r"::[a-z_]+::")` |
@@ -216,8 +217,17 @@ n.normalize("Hi ::wave:: it is 5 km [1] away.")
 - The pattern is a regular expression written by *you*: it must compile, not match the empty string
   and have no capturing groups (use `(?:...)`), else `ValueError`.
 - A stream never cuts inside a match. For a match that has started but is not complete (`::wav`) it
-  uses the pattern's literal start (`::`), taken from the pattern when possible. Otherwise pass
-  `opener="..."`, or `opener=""` if matches can never contain a sentence end.
+  uses the pattern's literal start (`::`), taken from the pattern when possible (leading `^`, `\b`
+  and lookarounds are skipped). Otherwise pass `opener="..."`, or `opener=""` if matches can never
+  contain a sentence end.
+
+`::[a-z_]+::` also matches inside code such as `std::vector::size`, so with `spoken=""` that would be
+read as "std size". Guard the marker so it only stands on its own:
+
+```python
+n.add_protected(r"(?<![\w:])::[a-z_]+::(?![\w:])", spoken="")
+n.normalize("Call std::vector::size ::wave:: now")   # 'Call std::vector::size now'
+```
 
 ## Rule sets for pronunciations
 
@@ -242,7 +252,8 @@ applied = []
 n.normalize("pH 7", rules=rules, applied=applied)  # applied == [Rule("pH", "p H", ...)]
 ```
 
-`Rule(term, spoken, whole_word=True, case_sensitive=False, gender=None, plural=None)` is a frozen
+`Rule(term, spoken, whole_word=True, case_sensitive=False, gender=None, plural=None,
+renormalize=False)` is a frozen
 dataclass. A `RuleSet` is immutable and hashable by content, so cache one per user with
 `functools.lru_cache`; one shared `Normalizer` per language serves any number of rule sets and is
 never changed by them. `stream(rules=...)`, `normalize_stream(chunks, rules=...)` and
@@ -263,7 +274,10 @@ How terms match:
   touching a letter or digit is padded with a space (`Δt` is "Delta t").
 - The word after `{number}` is looked up among the units: its gender is used for the number (`1 kg`
   is "ein Kilogramm") and singular or plural follows the value (`21 min` is "einundzwanzig Minuten").
-  `gender=` and `plural=` override this.
+  `gender=` and `plural=` override this. For a German noun that is not a unit, pass `gender=`
+  (`"m"`, `"f"` or `"n"`), else `1` is read "eins".
+- A replacement is not normalized again: `Rule("1 s", "1 Sekunde")` gives "1 Sekunde". Pass
+  `renormalize=True` to read it once more (without rules): "eine Sekunde".
 - Empty terms are ignored. Terms over 200 characters or more than 2,000 rules raise `ValueError`.
 
 ## Math (LaTeX)
@@ -435,29 +449,32 @@ Rules that need code (how to build "twenty-one") live in `langs/`; word lists li
 
 | Input | Time |
 |---|---|
-| a typical sentence (74 characters) | about 110 µs |
-| a 600-character paragraph | about 0.9 ms |
-| a 700-character Markdown paragraph | about 0.8 ms |
-| the sentence with a 200-rule `RuleSet` | about 140 µs |
-| streaming 1,000 one-character chunks | about 15 ms |
-| one-time startup | about 30 ms |
+| a typical sentence (74 characters) | about 55 µs |
+| a 600-character paragraph | about 0.45 ms |
+| a 700-character Markdown paragraph | about 0.36 ms |
+| the sentence with a 200-rule `RuleSet` | about 63 µs |
+| streaming 1,000 one-character chunks | about 8 ms |
+| one-time startup | about 5 ms |
 
 ## Known limitations
 
 - **Acronyms** such as "AI" or "LLM" are not expanded; add them with `add_abbreviation`.
-- **`*` and ` / `** are only read between a digit, `)` or `]` and a digit, `(` or `[`.
+- **`*` and ` / `** are only read between a digit, `)` or `]` and a digit, `(` or `[`; `·` also
+  between single letters.
 - **Subtraction:** `-` is only read as "minus" between two numbers with spaces (`5 - 3`), not in
   `x - 1`. In LaTeX math it is always read.
 - **German ordinal dots** are recognised in dates and after an article or contraction before a
   capitalised word. The ending follows the article (`der`/`die`/`das` → *dritte*, else *dritten*),
-  which is wrong for a feminine genitive or dative (`der 3. Klasse`).
+  which is wrong for a feminine genitive or dative (`der 3. Klasse`). Without an article
+  (`z. B. 3. Platz`) the ending would depend on the noun's gender, so it stays "drei. Platz".
 - **German number + noun:** the gender is only known for nouns that are units in the lexicon
   (`1 Stunde`, `1 Kilogramm`); `1 Haus` stays "eins Haus". Teach nouns with `add_unit`.
 - **Dates:** English `3/15/2024` and `15 March 2024`, and German two-digit years, are not handled.
 - **Durations** such as `1:30:15` are not recognised.
 - **Thousands:** a space between groups of three digits is a separator, so `3 100` is one number.
-- **Single capital-letter units** (`V`, `W`, `L`) only match attached to the number (`12V`), so "5 A
-  grade" is not five amperes.
+- **Single capital-letter units** (`V`, `W`, `L`, `N`, `J`) only match attached to the number
+  (`12V`), so the J in `5 J` is not read as joules. `A` is not a unit at all, so `Klasse 5A` is
+  not five amperes.
 - **LaTeX:** a lone `|` reads as "such that", so `P(A|B)` is not "given". Layout commands such as
   `\overset` and `\underbrace` are not interpreted.
 

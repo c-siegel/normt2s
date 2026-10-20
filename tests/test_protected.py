@@ -77,6 +77,15 @@ def test_leading_literal():
     assert _leading_literal(r"\[laughs\. loudly\]") == "[laughs"
     assert _leading_literal(r"ab*c") == "a"
     assert _leading_literal(r"\d+") == ""
+    assert _leading_literal(r"(?<![\w:])::[a-z_]+::(?![\w:])") == "::"
+    assert _leading_literal(r"^\b(?=<)(?<![\]:])<tag>") == "<tag>"
+    assert _leading_literal(r"(?<=x)\d") == ""
+
+
+def test_guarded_marker_needs_no_opener():
+    n = Normalizer("en")
+    n.add_protected(r"(?<![\w:])::[a-z_]+::(?![\w:])", spoken="")
+    assert n.normalize("Call std::vector::size ::wave:: now") == "Call std::vector::size now"
 
 
 def test_lexicon_file(tmp_path):

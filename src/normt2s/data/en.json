@@ -165,6 +165,9 @@
   "W": [
    "watt"
   ],
+  "Wh": [
+   "watt hour"
+  ],
   "kW": [
    "kilowatt"
   ],
@@ -186,6 +189,12 @@
   "kΩ": [
    "kiloohm"
   ],
+  "N": [
+   "newton"
+  ],
+  "kN": [
+   "kilonewton"
+  ],
   "Hz": [
    "hertz",
    "hertz"
@@ -204,6 +213,9 @@
   ],
   "kJ": [
    "kilojoule"
+  ],
+  "J": [
+   "joule"
   ],
   "kcal": [
    "kilocalorie"
@@ -352,7 +364,8 @@
  },
  "operators": {
   "*": "times",
-  "/": "divided by"
+  "/": "divided by",
+  "·": "times"
  },
  "latex": {
   "commands": {

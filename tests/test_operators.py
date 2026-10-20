@@ -17,6 +17,11 @@ def en():
     ("and/or", "and/or"),
     ("a * b", "a * b"),
     ("**bold**", "**bold**"),
+    ("F = m · a", "F equals m times a"),
+    ("2·3", "two times three"),
+    ("(a+b) · c", "(a plus b) times c"),
+    ("Home · About", "Home · About"),
+    ("x · Home", "x · Home"),
 ])
 def test_operators(en, src, want):
     assert en.normalize(src) == want
@@ -26,6 +31,9 @@ def test_german_operators():
     de = Normalizer("de")
     assert de.normalize("3 * 4") == "drei mal vier"
     assert de.normalize("8 / 2") == "acht geteilt durch zwei"
+    assert de.normalize("F = m · a") == "F gleich m mal a"
+    assert de.normalize("Lehrer·innen") == "Lehrer·innen"
+    assert de.normalize("Impressum · Datenschutz") == "Impressum · Datenschutz"
 
 
 def test_add_symbol_any_char(en):

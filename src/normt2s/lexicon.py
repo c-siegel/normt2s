@@ -28,13 +28,49 @@ def _elements() -> frozenset:
 _REGEX_SPECIAL = frozenset(".^$*+?{}[]|()")
 
 
+def _skip_assertions(pattern: str) -> int:
+    r"""Index after the zero-width assertions a pattern starts with (``^``, ``\b``, lookarounds)."""
+    i, n = 0, len(pattern)
+    while i < n:
+        if pattern[i] == "^":
+            i += 1
+        elif pattern.startswith(("\\b", "\\B", "\\A"), i):
+            i += 2
+        elif pattern.startswith(("(?=", "(?!", "(?<=", "(?<!"), i):
+            depth, j, in_class = 0, i, False
+            while j < n:
+                ch = pattern[j]
+                if ch == "\\":
+                    j += 1  # skip the escaped character
+                elif in_class:
+                    in_class = ch != "]"
+                elif ch == "[":
+                    in_class = True
+                    if pattern[j + 1:j + 2] == "^":
+                        j += 1
+                    if pattern[j + 1:j + 2] == "]":  # "[]...]", "[^]...]": a literal "]" first
+                        j += 1
+                elif ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            i = j + 1
+        else:
+            break
+    return i
+
+
 def _leading_literal(pattern: str) -> str:
     r"""The literal text a regex pattern must start with, up to the first blank or sentence mark.
 
     ``::[a-z_]+::`` -> ``::``; ``\[\d+\]`` -> ``[``; ``<emotion:\w+>`` -> ``<emotion:``.
+    Leading assertions are skipped: ``(?<![\w:])::[a-z_]+::`` -> ``::``.
     """
     out = []
-    i, n = 0, len(pattern)
+    i, n = _skip_assertions(pattern), len(pattern)
     while i < n:
         ch = pattern[i]
         if ch == "\\":
@@ -281,9 +317,11 @@ class Lexicon:
 
     @_locked
     def add_operator(self, key: str, word: str) -> None:
-        """``add_operator("*", "times")``: read only between operands (``3 * 4``). Keys: ``*``, ``/``."""
-        if key not in ("*", "/"):
-            raise ValueError("operator key must be '*' or '/'")
+        """``add_operator("*", "times")``: read only between operands (``3 * 4``).
+
+        Keys: ``*``, ``/`` and ``·`` (which also takes single letters: ``m · a``)."""
+        if key not in ("*", "/", "·"):
+            raise ValueError("operator key must be '*', '/' or '·'")
         self.operators[key] = word
         self.version += 1
 

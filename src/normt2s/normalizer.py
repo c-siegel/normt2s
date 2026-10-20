@@ -52,6 +52,7 @@ class _Compiled(NamedTuple):
     sym: Any
     ops: Any
     pre_re: Any
+    dot_re: Any
     post_re: Any
     token_re: Any
     suffix_re: Any
@@ -100,7 +101,7 @@ _MAX_INT_DIGITS = 15
 _NBSP = "\u00a0\u202f"
 
 
-_EMPTY = _Compiled(-1, *([None] * 21))
+_EMPTY = _Compiled(-1, *([None] * 22))
 
 
 class Normalizer:
@@ -321,6 +322,11 @@ class Normalizer:
         if "/" in ops:                       # 3 / 4 with spaces; 1/2 stays a fraction
             pre_alts.append(r"(?<=[\d)\]]) (?P<div>/) (?=[\d(\[])")
         pre_re = re.compile("|".join(pre_alts))
+        # 2 · 3, m · a; never Lehrer·innen or "Home · About". Its own regex, run only on text with
+        # a "·": its leading lookbehinds would otherwise be tried at every letter.
+        letter = r"[^\W\d_]"
+        dot_re = re.compile(rf"(?:(?<=[\d)\]])|(?<=(?<!{letter}){letter}))\s*·\s*"
+                            rf"(?=[\d(\[]|{letter}(?!{letter}))") if "·" in ops else None
         # every other single-character symbol is infix; longer keys (``!=``) go by length
         handled = "-^#%=+<>&²³"
         chars = [k for k in sym if len(k) == 1 and not k.isalnum() and k not in handled]
@@ -329,7 +335,8 @@ class Normalizer:
             r"(?P<sq>(?<=[\w)\]])[²³])"
             + (r"|\s?(?P<mop>" + "|".join(esc(k) for k in multi) + r")\s?" if multi else "")
             + (r"|\s?(?P<op>[" + "".join(esc(k) for k in chars) + r"])\s?" if chars else "")
-            + r"|(?<=[\w)\]])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£-])"
+            # a parked rule output (...) is an operand too: "F = 1 N"
+            + r"|(?<=[\w)\]])\s?(?P<eq>[=+])\s?(?=[\w(\[$€£-])"
             r"|(?<=\S) (?P<cmp>[<>]) (?=\S)"
             r"|(?<=\s)(?P<amp>&)(?=\s)"
         )
@@ -394,8 +401,9 @@ class Normalizer:
             span_re = SPAN_RE
         date_re = re.compile(lang.date_regex) if lang.date_regex else None
         ord_dot_re = re.compile(lang.ordinal_dot_regex) if lang.ordinal_dot_regex else None
-        return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, post_re, token_re,
-                         suffix_re, scale_re, year_re, range_re, date_re, ord_dot_re, punct_re, dict(lex.punctuation),
+        return _Compiled(version, abbr, abbr_re, no_boundary, sym, ops, pre_re, dot_re, post_re,
+                         token_re, suffix_re, scale_re, year_re, range_re, date_re, ord_dot_re,
+                         punct_re, dict(lex.punctuation),
                          spelled_re, iso_re, span_re, tuple(spoken for spoken, _ in lex.protected.values()),
                          tuple(op for _, op in lex.protected.values() if op))
 
@@ -406,7 +414,7 @@ class Normalizer:
         if rules is None or not rules.rules:
             return self._plain_core(text, c)
         spoken: list = []
-        text = self._apply_rules(text, rules, applied, spoken)
+        text = self._apply_rules(text, rules, applied, spoken, c)
         text = self._plain_core(text, c)
         return _RULE_PH.sub(lambda m: spoken[_decode(m.group(1))], text) if spoken else text
 
@@ -422,6 +430,8 @@ class Normalizer:
             text = c.date_re.sub(self._date_sub, text)
         if has_digit and c.ord_dot_re:
             text = c.ord_dot_re.sub(self.lang.format_ordinal_dot, text)
+        if c.dot_re is not None and "·" in text:
+            text = c.dot_re.sub(f" {c.ops['·']} ", text)
         text = c.pre_re.sub(lambda m: self._pre_sub(m, c), text)
         if has_digit:
             text = c.range_re.sub(f" {self.lang.range_word} ", text)
@@ -431,13 +441,16 @@ class Normalizer:
         return c.post_re.sub(lambda m: self._post_sub(m, c), text)
 
     # ------------------------------------------------------------------- rule sets
-    def _apply_rules(self, text: str, rules: RuleSet, applied: Optional[list], spoken: list) -> str:
+    def _apply_rules(self, text: str, rules: RuleSet, applied: Optional[list], spoken: list,
+                     c: _Compiled) -> str:
         """Replace rule matches by placeholders; their final text is stored in ``spoken``."""
         out, pos = [], 0
         for m, rule in rules.scan(text):
             words = self._rule_words(rule, m)
             if words is None:  # a number that cannot be parsed: leave it to the normal pipeline
                 continue
+            if rule.renormalize:
+                words = self._plain_core(words, c)
             if applied is not None and rule not in applied:
                 applied.append(rule)
             start, end = m.start(), m.end()

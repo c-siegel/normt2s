@@ -24,6 +24,7 @@ _GUARD_L = {"letter": r"(?<![^\W\d_])", "digit": r"(?<![^\W_])"}
 _GUARD_R = {"letter": r"(?![^\W\d_])", "digit": r"(?![^\W_])"}
 
 _CAMEL = {"caseSensitive": "case_sensitive", "wholeWord": "whole_word"}
+_FLAGS = ("whole_word", "case_sensitive", "renormalize")
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,8 @@ class Rule:
 
     ``gender`` and ``plural`` refine the first ``{number}`` of ``spoken``: the number is read in
     that gender, and ``plural`` replaces the word after it when the value is not exactly 1.
+    ``renormalize=True`` runs the spoken text through the normalizer once more (without rules), so
+    ``Rule("1 s", "1 Sekunde", renormalize=True)`` reads "eine Sekunde".
     """
 
     term: str
@@ -40,6 +43,7 @@ class Rule:
     case_sensitive: bool = False
     gender: Optional[str] = None
     plural: Optional[str] = None
+    renormalize: bool = False
 
 
 def _edge(term: str, last: bool) -> Optional[str]:
@@ -124,12 +128,12 @@ class RuleSet:
             if not isinstance(d, dict):
                 raise ValueError(f"rule must be an object, got {type(d).__name__}")
             d = {_CAMEL.get(k, k): v for k, v in d.items()}
-            unknown = set(d) - {"term", "spoken", "whole_word", "case_sensitive", "gender", "plural"}
+            unknown = set(d) - {"term", "spoken", "gender", "plural", *_FLAGS}
             if unknown:
                 raise ValueError(f"unknown rule keys: {sorted(unknown)}")
             if not isinstance(d.get("term"), str) or not isinstance(d.get("spoken"), str):
                 raise ValueError("a rule needs string 'term' and 'spoken'")
-            for flag in ("whole_word", "case_sensitive"):
+            for flag in _FLAGS:
                 if flag in d and not isinstance(d[flag], bool):
                     raise ValueError(f"'{flag}' must be true or false")
             rules.append(Rule(**d))
